@@ -1,0 +1,153 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model School {
+  id         String   @id @default(uuid())
+  name       String
+  slug       String   @unique
+  logoUrl    String?
+  timezone   String   @default("America/Argentina/Buenos_Aires")
+  plan       String   @default("free")
+  createdAt  DateTime @default(now())
+
+  users         User[]
+  classes       Class[]
+  payments      Payment[]
+  announcements Announcement[]
+}
+
+model User {
+  id        String    @id @default(uuid())
+  schoolId  String?
+  role      String
+  firstName String
+  lastName  String
+  email     String    @unique
+  phone     String?
+  birthDate DateTime?
+  avatarUrl String?
+  active    Boolean   @default(true)
+  createdAt DateTime  @default(now())
+
+  school               School?             @relation(fields: [schoolId], references: [id])
+  enrollments          Enrollment[]
+  payments             Payment[]
+  evaluationsReceived  Evaluation[]       @relation("StudentEvaluations")
+  evaluationsGiven     Evaluation[]       @relation("TeacherEvaluations")
+  announcementsCreated Announcement[]
+  announcementReads    AnnouncementRead[]
+  classesTaught        Class[]
+}
+
+model Class {
+  id        String  @id @default(uuid())
+  schoolId  String
+  teacherId String
+  name      String
+  style     String?
+  level     String?
+  room      String?
+  capacity  Int?
+  active    Boolean @default(true)
+
+  school      School          @relation(fields: [schoolId], references: [id])
+  teacher     User            @relation(fields: [teacherId], references: [id])
+  schedules   ClassSchedule[]
+  enrollments Enrollment[]
+  evaluations Evaluation[]
+}
+
+model ClassSchedule {
+  id        String @id @default(uuid())
+  classId   String
+  dayOfWeek Int
+  startTime String
+  endTime   String
+
+  class Class @relation(fields: [classId], references: [id])
+}
+
+model Enrollment {
+  id         String   @id @default(uuid())
+  studentId  String
+  classId    String
+  enrolledAt DateTime @default(now())
+  status     String   @default("active")
+
+  student    User         @relation(fields: [studentId], references: [id])
+  class      Class        @relation(fields: [classId], references: [id])
+  attendance Attendance[]
+}
+
+model Attendance {
+  id           String   @id @default(uuid())
+  enrollmentId String
+  sessionDate  DateTime
+  status       String
+  notes        String?
+
+  enrollment Enrollment @relation(fields: [enrollmentId], references: [id])
+}
+
+model Payment {
+  id        String    @id @default(uuid())
+  studentId String
+  schoolId  String
+  concept   String
+  amount    Float
+  dueDate   DateTime
+  paidAt    DateTime?
+  status    String    @default("pending")
+  method    String?
+
+  student User   @relation(fields: [studentId], references: [id])
+  school  School @relation(fields: [schoolId], references: [id])
+}
+
+model Announcement {
+  id        String    @id @default(uuid())
+  schoolId  String
+  authorId  String
+  title     String
+  body      String
+  audience  String    @default("all")
+  pushSent  Boolean   @default(false)
+  emailSent Boolean   @default(false)
+  sentAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  school School             @relation(fields: [schoolId], references: [id])
+  author User               @relation(fields: [authorId], references: [id])
+  reads  AnnouncementRead[]
+}
+
+model AnnouncementRead {
+  id             String   @id @default(uuid())
+  announcementId String
+  userId         String
+  readAt         DateTime @default(now())
+
+  announcement Announcement @relation(fields: [announcementId], references: [id])
+  user         User         @relation(fields: [userId], references: [id])
+}
+
+model Evaluation {
+  id            String   @id @default(uuid())
+  studentId     String
+  teacherId     String
+  classId       String
+  evalDate      DateTime
+  score         Int?
+  levelAchieved String?
+  notes         String?
+
+  student User  @relation("StudentEvaluations", fields: [studentId], references: [id])
+  teacher User  @relation("TeacherEvaluations", fields: [teacherId], references: [id])
+  class   Class @relation(fields: [classId], references: [id])
+}
