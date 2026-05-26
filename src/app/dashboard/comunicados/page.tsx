@@ -290,7 +290,7 @@ export default async function ComunicadosPage() {
                       style={{
                         fontFamily: "var(--font-jakarta)",
                         fontSize: "11px",
-                        color: "#aaaaaa",
+                        color: "#555555",
                       }}
                     >
                       {authorName}
@@ -299,7 +299,7 @@ export default async function ComunicadosPage() {
                       style={{
                         fontFamily: "var(--font-jakarta)",
                         fontSize: "11px",
-                        color: "#aaaaaa",
+                        color: "#555555",
                       }}
                     >
                       {formatDate(ann.createdAt)}
@@ -308,7 +308,7 @@ export default async function ComunicadosPage() {
                       style={{
                         fontFamily: "var(--font-jakarta)",
                         fontSize: "11px",
-                        color: "#aaaaaa",
+                        color: "#555555",
                         display: "flex",
                         alignItems: "center",
                         gap: "4px",
