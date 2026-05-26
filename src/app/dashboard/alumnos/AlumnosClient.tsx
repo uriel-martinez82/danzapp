@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { AnimatedList, AnimatedItem } from "@/components/AnimatedList";
+import AnimatedButton from "@/components/AnimatedButton";
 
 export type Student = {
   id: string;
@@ -155,7 +157,7 @@ export default function AlumnosClient({ students }: { students: Student[] }) {
           </p>
         </div>
 
-        <button
+        <AnimatedButton
           onClick={openModal}
           style={{
             display: "inline-flex",
@@ -175,7 +177,7 @@ export default function AlumnosClient({ students }: { students: Student[] }) {
         >
           <i className="ti ti-plus" aria-hidden="true" style={{ fontSize: "14px" }} />
           Invitar alumno
-        </button>
+        </AnimatedButton>
       </div>
 
       {/* ── Search ── */}
@@ -270,7 +272,7 @@ export default function AlumnosClient({ students }: { students: Student[] }) {
           >
             Invitá al primer alumno para comenzar a gestionar tu escuela.
           </p>
-          <button
+          <AnimatedButton
             onClick={openModal}
             style={{
               display: "inline-flex",
@@ -289,7 +291,7 @@ export default function AlumnosClient({ students }: { students: Student[] }) {
           >
             <i className="ti ti-plus" aria-hidden="true" style={{ fontSize: "14px" }} />
             Agregar primer alumno
-          </button>
+          </AnimatedButton>
         </div>
       )}
 
@@ -344,144 +346,147 @@ export default function AlumnosClient({ students }: { students: Student[] }) {
           </div>
 
           {/* Rows */}
-          {filtered.map((student) => {
-            const initials = getInitials(student.firstName, student.lastName);
-            return (
-              <div
-                key={student.id}
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "44px 1fr 160px 88px 108px 36px",
-                  gap: "0 16px",
-                  padding: "14px 18px",
-                  background: "white",
-                  borderRadius: "12px",
-                  border: "1px solid #EEECE8",
-                  alignItems: "center",
-                }}
-              >
-                {/* Avatar */}
-                <div
-                  style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: "50%",
-                    background: "#FF3D5E",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: "white",
-                    fontFamily: "var(--font-jakarta)",
-                    fontWeight: 600,
-                    fontSize: "13px",
-                    flexShrink: 0,
-                  }}
-                >
-                  {initials}
-                </div>
-
-                {/* Name + email */}
-                <div style={{ minWidth: 0 }}>
+          <AnimatedList style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            {filtered.map((student) => {
+              const initials = getInitials(student.firstName, student.lastName);
+              return (
+                <AnimatedItem key={student.id}>
                   <div
                     style={{
-                      fontFamily: "var(--font-jakarta)",
-                      fontSize: "14px",
-                      fontWeight: 500,
-                      color: "#111111",
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
+                      display: "grid",
+                      gridTemplateColumns: "44px 1fr 160px 88px 108px 36px",
+                      gap: "0 16px",
+                      padding: "14px 18px",
+                      background: "white",
+                      borderRadius: "12px",
+                      border: "1px solid #EEECE8",
+                      alignItems: "center",
                     }}
                   >
-                    {student.firstName} {student.lastName}
+                    {/* Avatar */}
+                    <div
+                      style={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: "50%",
+                        background: "#FF3D5E",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        color: "white",
+                        fontFamily: "var(--font-jakarta)",
+                        fontWeight: 600,
+                        fontSize: "13px",
+                        flexShrink: 0,
+                      }}
+                    >
+                      {initials}
+                    </div>
+
+                    {/* Name + email */}
+                    <div style={{ minWidth: 0 }}>
+                      <div
+                        style={{
+                          fontFamily: "var(--font-jakarta)",
+                          fontSize: "14px",
+                          fontWeight: 500,
+                          color: "#111111",
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        }}
+                      >
+                        {student.firstName} {student.lastName}
+                      </div>
+                      <div
+                        style={{
+                          fontFamily: "var(--font-jakarta)",
+                          fontSize: "12px",
+                          color: "#555555",
+                          marginTop: "2px",
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        }}
+                      >
+                        {student.email}
+                      </div>
+                    </div>
+
+                    {/* Phone */}
+                    <div
+                      style={{
+                        fontFamily: "var(--font-jakarta)",
+                        fontSize: "13px",
+                        color: student.phone ? "#555555" : "#888888",
+                      }}
+                    >
+                      {student.phone ?? "—"}
+                    </div>
+
+                    {/* Status badge */}
+                    <div>
+                      <span
+                        style={{
+                          fontFamily: "var(--font-jakarta)",
+                          fontSize: "11px",
+                          fontWeight: 500,
+                          background: student.active ? "#F0FAF5" : "#F4F2EE",
+                          color: student.active ? "#1D9E75" : "#999999",
+                          padding: "3px 8px",
+                          borderRadius: "6px",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {student.active ? "Activo" : "Inactivo"}
+                      </span>
+                    </div>
+
+                    {/* Join date */}
+                    <div
+                      style={{
+                        fontFamily: "var(--font-jakarta)",
+                        fontSize: "12px",
+                        color: "#555555",
+                      }}
+                    >
+                      {formatDate(student.createdAt)}
+                    </div>
+
+                    {/* Profile link */}
+                    <Link
+                      href={`/dashboard/alumnos/${student.id}`}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        width: 32,
+                        height: 32,
+                        borderRadius: "8px",
+                        color: "#cccccc",
+                        textDecoration: "none",
+                        transition: "background 0.15s, color 0.15s",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = "#F4F2EE";
+                        e.currentTarget.style.color = "#555555";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = "transparent";
+                        e.currentTarget.style.color = "#cccccc";
+                      }}
+                    >
+                      <i
+                        className="ti ti-chevron-right"
+                        aria-hidden="true"
+                        style={{ fontSize: "16px" }}
+                      />
+                    </Link>
                   </div>
-                  <div
-                    style={{
-                      fontFamily: "var(--font-jakarta)",
-                      fontSize: "12px",
-                      color: "#555555",
-                      marginTop: "2px",
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                    }}
-                  >
-                    {student.email}
-                  </div>
-                </div>
-
-                {/* Phone */}
-                <div
-                  style={{
-                    fontFamily: "var(--font-jakarta)",
-                    fontSize: "13px",
-                    color: student.phone ? "#555555" : "#888888",
-                  }}
-                >
-                  {student.phone ?? "—"}
-                </div>
-
-                {/* Status badge */}
-                <div>
-                  <span
-                    style={{
-                      fontFamily: "var(--font-jakarta)",
-                      fontSize: "11px",
-                      fontWeight: 500,
-                      background: student.active ? "#F0FAF5" : "#F4F2EE",
-                      color: student.active ? "#1D9E75" : "#999999",
-                      padding: "3px 8px",
-                      borderRadius: "6px",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {student.active ? "Activo" : "Inactivo"}
-                  </span>
-                </div>
-
-                {/* Join date */}
-                <div
-                  style={{
-                    fontFamily: "var(--font-jakarta)",
-                    fontSize: "12px",
-                    color: "#555555",
-                  }}
-                >
-                  {formatDate(student.createdAt)}
-                </div>
-
-                {/* Profile link */}
-                <Link
-                  href={`/dashboard/alumnos/${student.id}`}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    width: 32,
-                    height: 32,
-                    borderRadius: "8px",
-                    color: "#cccccc",
-                    textDecoration: "none",
-                    transition: "background 0.15s, color 0.15s",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = "#F4F2EE";
-                    e.currentTarget.style.color = "#555555";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = "transparent";
-                    e.currentTarget.style.color = "#cccccc";
-                  }}
-                >
-                  <i
-                    className="ti ti-chevron-right"
-                    aria-hidden="true"
-                    style={{ fontSize: "16px" }}
-                  />
-                </Link>
-              </div>
-            );
-          })}
+                </AnimatedItem>
+              );
+            })}
+          </AnimatedList>
         </div>
       )}
 

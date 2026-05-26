@@ -180,7 +180,10 @@ export default function Sidebar({ user }: { user: User }) {
       }}
     >
       {/* ── Logo ── */}
-      <div
+      <motion.div
+        initial={{ opacity: 0, x: -10 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.4, delay: 0.1 }}
         style={{
           padding: "28px 20px 22px",
           borderBottom: "1px solid rgba(255,255,255,0.07)",
@@ -212,7 +215,7 @@ export default function Sidebar({ user }: { user: User }) {
         >
           gestión de danza
         </div>
-      </div>
+      </motion.div>
 
       {/* ── Navigation ── */}
       <nav

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import PageTransition from "@/components/PageTransition";
 
 export default function NuevoComunicadoPage() {
   const router = useRouter();
@@ -39,6 +40,7 @@ export default function NuevoComunicadoPage() {
   }
 
   return (
+    <PageTransition>
     <div>
       {/* ── Header ── */}
       <div style={{ marginBottom: "28px" }}>
@@ -317,5 +319,6 @@ export default function NuevoComunicadoPage() {
         }
       `}</style>
     </div>
+    </PageTransition>
   );
 }

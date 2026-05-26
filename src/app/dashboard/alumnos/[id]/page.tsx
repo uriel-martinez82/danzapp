@@ -2,6 +2,7 @@ import { currentUser } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
+import PageTransition from "@/components/PageTransition";
 
 function formatDate(date: Date | null, style: "long" | "short" = "long"): string {
   if (!date) return "—";
@@ -60,6 +61,7 @@ export default async function AlumnoPerfilPage({
   ];
 
   return (
+    <PageTransition>
     <div>
       {/* ── Back link ── */}
       <Link
@@ -210,5 +212,6 @@ export default async function AlumnoPerfilPage({
         </div>
       </div>
     </div>
+    </PageTransition>
   );
 }

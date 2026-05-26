@@ -2,6 +2,7 @@ import { currentUser } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import AlumnosClient from "./AlumnosClient";
+import PageTransition from "@/components/PageTransition";
 
 export default async function AlumnosPage() {
   const clerkUser = await currentUser();
@@ -14,17 +15,19 @@ export default async function AlumnosPage() {
 
   if (!user.schoolId) {
     return (
-      <div style={{ textAlign: "center", padding: "80px 20px" }}>
-        <p
-          style={{
-            fontFamily: "var(--font-jakarta)",
-            fontSize: "14px",
-            color: "#999999",
-          }}
-        >
-          No tenés una escuela asignada.
-        </p>
-      </div>
+      <PageTransition>
+        <div style={{ textAlign: "center", padding: "80px 20px" }}>
+          <p
+            style={{
+              fontFamily: "var(--font-jakarta)",
+              fontSize: "14px",
+              color: "#999999",
+            }}
+          >
+            No tenés una escuela asignada.
+          </p>
+        </div>
+      </PageTransition>
     );
   }
 
@@ -50,5 +53,9 @@ export default async function AlumnosPage() {
     createdAt: s.createdAt.toISOString(),
   }));
 
-  return <AlumnosClient students={serialized} />;
+  return (
+    <PageTransition>
+      <AlumnosClient students={serialized} />
+    </PageTransition>
+  );
 }
