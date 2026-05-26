@@ -25,7 +25,7 @@ export default async function DashboardLayout({
   return (
     <div className="flex h-screen overflow-hidden">
       <Sidebar user={user} />
-      <main className="flex-1 overflow-y-auto" style={{ background: "var(--color-surface)", padding: "40px 48px" }}>
+      <main className="flex-1 overflow-y-auto" style={{ padding: "40px 48px", transition: "background 0.3s ease" }}>
         {children}
       </main>
     </div>

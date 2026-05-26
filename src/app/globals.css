@@ -42,3 +42,50 @@ a {
   color: inherit;
   text-decoration: none;
 }
+
+/* ── Main content: base + animated background per section ── */
+main {
+  background: var(--color-surface);
+  transition: background 0.35s ease;
+}
+
+body[data-section="dashboard"]   main { background: #FFF3E0 !important; }
+body[data-section="alumnos"]     main { background: #FCE4EC !important; }
+body[data-section="clases"]      main { background: #E8F5E9 !important; }
+body[data-section="comunicados"] main { background: #E3F2FD !important; }
+body[data-section="pagos"]       main { background: #EDE7F6 !important; }
+
+/* ── Notebook tab corners: shared pseudo-element base ── */
+.tab-active::before,
+.tab-active::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  width: 10px;
+  height: 10px;
+  pointer-events: none;
+}
+.tab-active::before {
+  top: -10px;
+  border-bottom-right-radius: 8px;
+}
+.tab-active::after {
+  bottom: -10px;
+  border-top-right-radius: 8px;
+}
+
+/* ── Per-section corner colors ── */
+.tab-active-dashboard::before { background: #FFF3E0; box-shadow:  3px  3px 0 3px #111111; }
+.tab-active-dashboard::after  { background: #FFF3E0; box-shadow:  3px -3px 0 3px #111111; }
+
+.tab-active-alumnos::before   { background: #FCE4EC; box-shadow:  3px  3px 0 3px #111111; }
+.tab-active-alumnos::after    { background: #FCE4EC; box-shadow:  3px -3px 0 3px #111111; }
+
+.tab-active-clases::before    { background: #E8F5E9; box-shadow:  3px  3px 0 3px #111111; }
+.tab-active-clases::after     { background: #E8F5E9; box-shadow:  3px -3px 0 3px #111111; }
+
+.tab-active-comunicados::before { background: #E3F2FD; box-shadow:  3px  3px 0 3px #111111; }
+.tab-active-comunicados::after  { background: #E3F2FD; box-shadow:  3px -3px 0 3px #111111; }
+
+.tab-active-pagos::before     { background: #EDE7F6; box-shadow:  3px  3px 0 3px #111111; }
+.tab-active-pagos::after      { background: #EDE7F6; box-shadow:  3px -3px 0 3px #111111; }

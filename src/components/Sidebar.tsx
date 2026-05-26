@@ -1,8 +1,10 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { SignOutButton } from "@clerk/nextjs";
+import { motion } from "framer-motion";
 
 type User = {
   id: string;
@@ -12,31 +14,160 @@ type User = {
   role: string;
 };
 
-const navItems = [
-  { href: "/dashboard", icon: "ti-home", label: "Dashboard" },
-  { href: "/dashboard/alumnos", icon: "ti-users", label: "Alumnos" },
-  { href: "/dashboard/clases", icon: "ti-calendar", label: "Clases" },
-  { href: "/dashboard/comunicados", icon: "ti-bell", label: "Comunicados" },
-  { href: "/dashboard/pagos", icon: "ti-credit-card", label: "Pagos" },
+type Scheme = {
+  off:   string;
+  hover: string;
+  on:    string;
+  text:  string;
+  icon:  string;
+};
+
+const navItems: {
+  href:   string;
+  key:    string;
+  icon:   string;
+  label:  string;
+  scheme: Scheme;
+}[] = [
+  {
+    href:  "/dashboard",
+    key:   "dashboard",
+    icon:  "ti-home",
+    label: "Dashboard",
+    scheme: {
+      off:   "rgba(245,158,11,0.10)",
+      hover: "rgba(245,158,11,0.22)",
+      on:    "#FFF3E0",
+      text:  "#7C4A00",
+      icon:  "#D97706",
+    },
+  },
+  {
+    href:  "/dashboard/alumnos",
+    key:   "alumnos",
+    icon:  "ti-users",
+    label: "Alumnos",
+    scheme: {
+      off:   "rgba(233,30,99,0.10)",
+      hover: "rgba(233,30,99,0.22)",
+      on:    "#FCE4EC",
+      text:  "#6D0030",
+      icon:  "#C2185B",
+    },
+  },
+  {
+    href:  "/dashboard/clases",
+    key:   "clases",
+    icon:  "ti-calendar",
+    label: "Clases",
+    scheme: {
+      off:   "rgba(76,175,80,0.10)",
+      hover: "rgba(76,175,80,0.22)",
+      on:    "#E8F5E9",
+      text:  "#1B4D1E",
+      icon:  "#388E3C",
+    },
+  },
+  {
+    href:  "/dashboard/comunicados",
+    key:   "comunicados",
+    icon:  "ti-bell",
+    label: "Comunicados",
+    scheme: {
+      off:   "rgba(33,150,243,0.10)",
+      hover: "rgba(33,150,243,0.22)",
+      on:    "#E3F2FD",
+      text:  "#0A2E6E",
+      icon:  "#1565C0",
+    },
+  },
+  {
+    href:  "/dashboard/pagos",
+    key:   "pagos",
+    icon:  "ti-credit-card",
+    label: "Pagos",
+    scheme: {
+      off:   "rgba(124,58,237,0.10)",
+      hover: "rgba(124,58,237,0.22)",
+      on:    "#EDE7F6",
+      text:  "#240A6E",
+      icon:  "#5E35B1",
+    },
+  },
 ];
 
 const roleLabels: Record<string, string> = {
-  admin: "Admin",
+  admin:   "Admin",
   teacher: "Profesor",
   student: "Alumno",
 };
 
-export default function Sidebar({ user }: { user: User }) {
-  const pathname = usePathname();
+function getActiveKey(pathname: string): string {
+  if (pathname.startsWith("/dashboard/alumnos"))     return "alumnos";
+  if (pathname.startsWith("/dashboard/clases"))      return "clases";
+  if (pathname.startsWith("/dashboard/comunicados")) return "comunicados";
+  if (pathname.startsWith("/dashboard/pagos"))       return "pagos";
+  return "dashboard";
+}
 
-  const initial = user.firstName?.[0] ?? user.email[0].toUpperCase();
+export default function Sidebar({ user }: { user: User }) {
+  const pathname  = usePathname();
+  const activeKey = getActiveKey(pathname);
+  const [hoveredKey, setHoveredKey] = useState<string | null>(null);
+
+  // Sync body[data-section] for the main background transition
+  useEffect(() => {
+    document.body.setAttribute("data-section", activeKey);
+    return () => { document.body.removeAttribute("data-section"); };
+  }, [activeKey]);
+
+  const initial     = user.firstName?.[0] ?? user.email[0].toUpperCase();
   const displayName = user.firstName
     ? `${user.firstName} ${user.lastName}`
     : user.email;
 
   return (
-    <aside
-      style={{
+    <>
+      {/* ── Notebook tab styles (pseudo-elements can't be inline) ── */}
+      <style>{`
+        .tab-active { position: relative; overflow: visible; }
+
+        .tab-active::before,
+        .tab-active::after {
+          content: '';
+          position: absolute;
+          right: 0;
+          width: 10px;
+          height: 10px;
+          pointer-events: none;
+        }
+        .tab-active::before {
+          top: -10px;
+          border-bottom-right-radius: 8px;
+        }
+        .tab-active::after {
+          bottom: -10px;
+          border-top-right-radius: 8px;
+        }
+
+        .tab-active-dashboard::before { background: #FFF3E0; box-shadow: 3px  3px 0 3px #111; }
+        .tab-active-dashboard::after  { background: #FFF3E0; box-shadow: 3px -3px 0 3px #111; }
+
+        .tab-active-alumnos::before   { background: #FCE4EC; box-shadow: 3px  3px 0 3px #111; }
+        .tab-active-alumnos::after    { background: #FCE4EC; box-shadow: 3px -3px 0 3px #111; }
+
+        .tab-active-clases::before    { background: #E8F5E9; box-shadow: 3px  3px 0 3px #111; }
+        .tab-active-clases::after     { background: #E8F5E9; box-shadow: 3px -3px 0 3px #111; }
+
+        .tab-active-comunicados::before { background: #E3F2FD; box-shadow: 3px  3px 0 3px #111; }
+        .tab-active-comunicados::after  { background: #E3F2FD; box-shadow: 3px -3px 0 3px #111; }
+
+        .tab-active-pagos::before     { background: #EDE7F6; box-shadow: 3px  3px 0 3px #111; }
+        .tab-active-pagos::after      { background: #EDE7F6; box-shadow: 3px -3px 0 3px #111; }
+      `}</style>
+
+      <aside
+        style={{
         width: 220,
         minWidth: 220,
         height: "100vh",
@@ -44,6 +175,8 @@ export default function Sidebar({ user }: { user: User }) {
         flexDirection: "column",
         background: "#111111",
         flexShrink: 0,
+        position: "relative",
+        zIndex: 10,
       }}
     >
       {/* ── Logo ── */}
@@ -85,39 +218,88 @@ export default function Sidebar({ user }: { user: User }) {
       <nav
         style={{
           flex: 1,
-          padding: "14px 10px",
+          padding: "16px 0",
           display: "flex",
           flexDirection: "column",
-          gap: "2px",
+          gap: "3px",
+          overflow: "visible",
         }}
       >
         {navItems.map((item) => {
-          const isActive = pathname === item.href;
+          const isActive  = activeKey === item.key;
+          const isHovered = !isActive && hoveredKey === item.key;
+          const { scheme } = item;
+
+          const bg = isActive
+            ? scheme.on
+            : isHovered
+            ? scheme.hover
+            : scheme.off;
+
           return (
             <Link
               key={item.href}
               href={item.href}
-              className={!isActive ? "hover:text-white/70" : ""}
+              className={
+                isActive
+                  ? `tab-active tab-active-${item.key}`
+                  : ""
+              }
               style={{
                 display: "flex",
                 alignItems: "center",
                 gap: "10px",
-                padding: "9px 12px",
-                borderRadius: "10px",
+                marginLeft:   isActive ? "14px" : "8px",
+                marginRight:  isActive ? "0"    : "8px",
+                paddingTop:    "9px",
+                paddingBottom: "9px",
+                paddingLeft:  isActive ? "16px" : "12px",
+                paddingRight:  "12px",
+                borderRadius: isActive ? "10px 0 0 10px" : "10px",
                 fontFamily: "var(--font-jakarta)",
                 fontSize: "13px",
                 fontWeight: isActive ? 500 : 400,
-                color: isActive ? "#FF3D5E" : "rgba(255,255,255,0.4)",
-                background: isActive ? "rgba(255,61,94,0.12)" : "transparent",
-                transition: "color 0.15s, background 0.15s",
+                color: isActive ? scheme.text : "rgba(255,255,255,0.5)",
+                background: bg,
+                transition:
+                  "background 0.2s ease, color 0.2s ease, margin-left 0.2s ease",
                 textDecoration: "none",
+                position: "relative",
+                zIndex: isActive ? 2 : 1,
               }}
+              onMouseEnter={() => setHoveredKey(item.key)}
+              onMouseLeave={() => setHoveredKey(null)}
             >
-              <i
-                className={`ti ${item.icon}`}
-                aria-hidden="true"
-                style={{ fontSize: "15px", lineHeight: 1, flexShrink: 0 }}
-              />
+              {/* Icon — active gets pop-in spring, inactive gets hover spring */}
+              {isActive ? (
+                <motion.span
+                  key={`icon-active-${item.key}`}
+                  initial={{ scale: 0.7, rotate: -15 }}
+                  animate={{ scale: 1, rotate: 0 }}
+                  transition={{ type: "spring", stiffness: 350, damping: 10 }}
+                  style={{ display: "inline-flex", lineHeight: 1, flexShrink: 0 }}
+                >
+                  <i
+                    className={`ti ${item.icon}`}
+                    aria-hidden="true"
+                    style={{ fontSize: "15px", color: scheme.icon }}
+                  />
+                </motion.span>
+              ) : (
+                <motion.span
+                  key={`icon-inactive-${item.key}`}
+                  whileHover={{ scale: 1.3, rotate: -8 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 15 }}
+                  style={{ display: "inline-flex", lineHeight: 1, flexShrink: 0 }}
+                >
+                  <i
+                    className={`ti ${item.icon}`}
+                    aria-hidden="true"
+                    style={{ fontSize: "15px", color: scheme.icon }}
+                  />
+                </motion.span>
+              )}
+
               {item.label}
             </Link>
           );
@@ -131,7 +313,14 @@ export default function Sidebar({ user }: { user: User }) {
           borderTop: "1px solid rgba(255,255,255,0.07)",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
+            marginBottom: "12px",
+          }}
+        >
           {/* Avatar */}
           <div
             style={{
@@ -197,14 +386,23 @@ export default function Sidebar({ user }: { user: User }) {
               padding: 0,
               transition: "color 0.15s",
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.5)")}
-            onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.22)")}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.color = "rgba(255,255,255,0.5)")
+            }
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.color = "rgba(255,255,255,0.22)")
+            }
           >
-            <i className="ti ti-logout" aria-hidden="true" style={{ fontSize: "13px" }} />
+            <i
+              className="ti ti-logout"
+              aria-hidden="true"
+              style={{ fontSize: "13px" }}
+            />
             Cerrar sesión
           </button>
         </SignOutButton>
       </div>
     </aside>
+    </>
   );
 }
