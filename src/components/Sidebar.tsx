@@ -26,70 +26,181 @@ const roleLabels: Record<string, string> = {
   student: "Alumno",
 };
 
-const roleBadgeStyles: Record<string, string> = {
-  admin: "bg-[#FF3D5E18] text-[#CC1F3C]",
-  teacher: "bg-[#1D9E7518] text-[#0A5E44]",
-  student: "bg-[#378ADD18] text-[#0C447C]",
-};
-
 export default function Sidebar({ user }: { user: User }) {
   const pathname = usePathname();
 
+  const initial = user.firstName?.[0] ?? user.email[0].toUpperCase();
+  const displayName = user.firstName
+    ? `${user.firstName} ${user.lastName}`
+    : user.email;
+
   return (
-    <aside className="w-64 h-screen flex flex-col bg-[var(--color-dark)] shrink-0">
-      <div className="px-6 py-8 border-b border-white/10">
+    <aside
+      style={{
+        width: 220,
+        minWidth: 220,
+        height: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        background: "#111111",
+        flexShrink: 0,
+      }}
+    >
+      {/* ── Logo ── */}
+      <div
+        style={{
+          padding: "28px 20px 22px",
+          borderBottom: "1px solid rgba(255,255,255,0.07)",
+        }}
+      >
         <div
-          className="text-white text-3xl font-bold tracking-tight"
-          style={{ fontFamily: "var(--font-syne)" }}
+          style={{
+            fontFamily: "var(--font-fraunces)",
+            fontWeight: 300,
+            fontStyle: "italic",
+            fontSize: "22px",
+            lineHeight: 1,
+            color: "white",
+            letterSpacing: "-0.03em",
+          }}
         >
-          Pas<span className="text-[var(--color-accent)]">a</span>da
+          Pas<span style={{ color: "#FF3D5E" }}>a</span>da
         </div>
-        <div className="text-white/30 text-xs tracking-widest uppercase mt-1">
+        <div
+          style={{
+            fontFamily: "var(--font-jakarta)",
+            fontWeight: 400,
+            fontSize: "10px",
+            letterSpacing: "0.14em",
+            textTransform: "uppercase",
+            color: "rgba(255,255,255,0.25)",
+            marginTop: "6px",
+          }}
+        >
           gestión de danza
         </div>
       </div>
 
-      <nav className="flex-1 px-3 py-6 space-y-1">
+      {/* ── Navigation ── */}
+      <nav
+        style={{
+          flex: 1,
+          padding: "14px 10px",
+          display: "flex",
+          flexDirection: "column",
+          gap: "2px",
+        }}
+      >
         {navItems.map((item) => {
           const isActive = pathname === item.href;
           return (
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
-                isActive
-                  ? "bg-[var(--color-accent)] text-white font-medium"
-                  : "text-white/50 hover:text-white hover:bg-white/5"
-              }`}
+              className={!isActive ? "hover:text-white/70" : ""}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+                padding: "9px 12px",
+                borderRadius: "10px",
+                fontFamily: "var(--font-jakarta)",
+                fontSize: "13px",
+                fontWeight: isActive ? 500 : 400,
+                color: isActive ? "#FF3D5E" : "rgba(255,255,255,0.4)",
+                background: isActive ? "rgba(255,61,94,0.12)" : "transparent",
+                transition: "color 0.15s, background 0.15s",
+                textDecoration: "none",
+              }}
             >
-              <i className={`ti ${item.icon} text-lg`} aria-hidden="true" />
+              <i
+                className={`ti ${item.icon}`}
+                aria-hidden="true"
+                style={{ fontSize: "15px", lineHeight: 1, flexShrink: 0 }}
+              />
               {item.label}
             </Link>
           );
         })}
       </nav>
 
-      <div className="px-4 py-5 border-t border-white/10">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-9 h-9 rounded-full bg-[var(--color-accent)] flex items-center justify-center text-white text-sm font-semibold shrink-0">
-            {user.firstName?.[0] ?? user.email[0].toUpperCase()}
+      {/* ── User ── */}
+      <div
+        style={{
+          padding: "16px 18px 20px",
+          borderTop: "1px solid rgba(255,255,255,0.07)",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px" }}>
+          {/* Avatar */}
+          <div
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: "50%",
+              background: "#FF3D5E",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+              fontFamily: "var(--font-jakarta)",
+              fontWeight: 600,
+              fontSize: "12px",
+              color: "white",
+            }}
+          >
+            {initial}
           </div>
-          <div className="min-w-0">
-            <div className="text-white text-sm font-medium truncate">
-              {user.firstName
-                ? `${user.firstName} ${user.lastName}`
-                : user.email}
+
+          {/* Info */}
+          <div style={{ minWidth: 0 }}>
+            <div
+              style={{
+                fontFamily: "var(--font-jakarta)",
+                fontWeight: 400,
+                fontSize: "12px",
+                color: "rgba(255,255,255,0.6)",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
+            >
+              {displayName}
             </div>
-            <span
-              className={`text-xs px-2 py-0.5 rounded-full font-medium ${roleBadgeStyles[user.role] ?? "bg-white/10 text-white/50"}`}
+            <div
+              style={{
+                fontFamily: "var(--font-jakarta)",
+                fontWeight: 400,
+                fontSize: "11px",
+                color: "rgba(255,255,255,0.25)",
+                marginTop: "1px",
+              }}
             >
               {roleLabels[user.role] ?? user.role}
-            </span>
+            </div>
           </div>
         </div>
+
         <SignOutButton>
-          <button className="w-full text-left text-white/30 hover:text-white/60 text-xs transition-colors flex items-center gap-2">
-            <i className="ti ti-logout text-sm" aria-hidden="true" />
+          <button
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              fontFamily: "var(--font-jakarta)",
+              fontWeight: 400,
+              fontSize: "12px",
+              color: "rgba(255,255,255,0.22)",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              padding: 0,
+              transition: "color 0.15s",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.5)")}
+            onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.22)")}
+          >
+            <i className="ti ti-logout" aria-hidden="true" style={{ fontSize: "13px" }} />
             Cerrar sesión
           </button>
         </SignOutButton>
