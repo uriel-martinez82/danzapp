@@ -373,7 +373,7 @@ export default function Sidebar({ user }: { user: User }) {
           </div>
         </div>
 
-        <SignOutButton>
+        <SignOutButton redirectUrl="/sign-in">
           <button
             style={{
               display: "flex",
