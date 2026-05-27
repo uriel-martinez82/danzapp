@@ -18,19 +18,22 @@ export async function GET() {
     orderBy: { createdAt: "desc" },
     include: {
       author: { select: { id: true, firstName: true, lastName: true } },
-      reads:  { where: { userId: user.id }, select: { id: true } },
+      reads:  { select: { userId: true } },
     },
   });
 
   return NextResponse.json(
     notifications.map((n) => ({
-      id:         n.id,
-      title:      n.title,
-      body:       n.body,
-      createdAt:  n.createdAt.toISOString(),
-      createdBy:  n.createdBy,
-      author:     n.author,
-      readByMe:   n.reads.length > 0,
+      id:        n.id,
+      title:     n.title,
+      body:      n.body,
+      createdAt: n.createdAt.toISOString(),
+      createdBy: n.createdBy,
+      author:    n.author,
+      // El creador siempre la ve como leída; los demás dependen de NotificationRead
+      readByMe:  n.createdBy === user.id
+        ? true
+        : n.reads.some((r) => r.userId === user.id),
     })),
   );
 }
