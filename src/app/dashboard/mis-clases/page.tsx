@@ -451,10 +451,10 @@ export default async function MisClasesPage() {
                         )}
                       </div>
 
-                      {/* Detail link — solo para admin; teacher/student ven info de solo lectura */}
+                      {/* Detail link */}
                       {user.role === "teacher" && (
                         <Link
-                          href={`/dashboard/clases/${clase.id}`}
+                          href={`/dashboard/mis-clases/${clase.id}`}
                           style={{
                             display: "flex",
                             alignItems: "center",

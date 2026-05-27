@@ -3,7 +3,6 @@ import { prisma } from "@/lib/prisma";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import PageTransition from "@/components/PageTransition";
-import AnimatedButton from "@/components/AnimatedButton";
 import { AnimatedList, AnimatedItem } from "@/components/AnimatedList";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -75,16 +74,17 @@ export default async function MiClaseDetailPage({
 
   if (!clase) notFound();
 
-  // Control de acceso
-  const isTeacher = user.role === "teacher" && clase.teacherId === user.id;
-  const isAdmin   = user.role === "admin"   && clase.schoolId === user.schoolId;
-  const isStudent = user.role === "student" &&
+  // Control de acceso — String() para evitar problemas de tipado con el campo role de Prisma
+  const role      = String(user.role);
+  const isTeacher = role === "teacher" && clase.teacherId === user.id;
+  const isAdmin   = role === "admin"   && clase.schoolId === user.schoolId;
+  const isStudent = role === "student" &&
     clase.enrollments.some((e) => e.student.id === user.id);
 
   if (!isTeacher && !isAdmin && !isStudent) redirect("/dashboard");
 
-  const styleChip   = hashColor(clase.style ?? clase.name);
-  const canAttend   = isTeacher || isAdmin;
+  const styleChip = hashColor(clase.style ?? clase.name);
+  const canAttend = isTeacher || isAdmin;
 
   return (
     <PageTransition>
@@ -135,29 +135,6 @@ export default async function MiClaseDetailPage({
             </h1>
           </div>
 
-          {/* Botón asistencia — solo para teacher/admin */}
-          {canAttend && (
-            <AnimatedButton
-              href={`/dashboard/mis-clases/${id}/asistencia?date=${todayStr}`}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "6px",
-                background: "#111111",
-                color: "white",
-                borderRadius: "10px",
-                padding: "10px 18px",
-                fontFamily: "var(--font-jakarta)",
-                fontSize: "13px",
-                fontWeight: 500,
-                textDecoration: "none",
-                flexShrink: 0,
-              }}
-            >
-              <i className="ti ti-clipboard-check" aria-hidden="true" style={{ fontSize: "14px" }} />
-              Tomar asistencia hoy
-            </AnimatedButton>
-          )}
         </div>
 
         {/* ── Layout 2 columnas ── */}
