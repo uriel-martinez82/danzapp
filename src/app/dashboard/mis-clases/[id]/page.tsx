@@ -352,6 +352,33 @@ export default async function MiClaseDetailPage({
                 </AnimatedList>
               )}
             </div>
+
+            {/* ── Botón tomar asistencia ── */}
+            {canAttend && (
+              <Link
+                href={`/dashboard/mis-clases/${id}/asistencia`}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  background: "#FF3D5E",
+                  color: "white",
+                  borderRadius: "10px",
+                  padding: "12px 24px",
+                  fontFamily: "var(--font-jakarta)",
+                  fontSize: "14px",
+                  fontWeight: 500,
+                  textDecoration: "none",
+                }}
+              >
+                <i
+                  className="ti ti-clipboard-list"
+                  aria-hidden="true"
+                  style={{ fontSize: "16px" }}
+                />
+                Tomar asistencia hoy
+              </Link>
+            )}
           </div>
 
           {/* ── Columna derecha: profesor + horarios ── */}
