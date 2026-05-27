@@ -22,6 +22,11 @@ export default async function DashboardLayout({
     redirect("/sign-in");
   }
 
+  // Sin escuela asignada → flujo de onboarding
+  if (!user.schoolId) {
+    redirect("/onboarding");
+  }
+
   return (
     <div className="flex h-screen overflow-hidden">
       <Sidebar user={user} />
