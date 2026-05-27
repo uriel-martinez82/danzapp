@@ -230,6 +230,16 @@ export default async function MisClasesPage() {
 
         {/* ── Grid ── */}
         {cards.length > 0 && (
+          <>
+          <style>{`
+            .clase-card {
+              transition: box-shadow 0.2s ease, transform 0.2s ease;
+            }
+            .clase-card:hover {
+              box-shadow: 0 8px 28px rgba(0,0,0,0.10);
+              transform: translateY(-2px);
+            }
+          `}</style>
           <AnimatedList
             style={{
               display: "grid",
@@ -245,7 +255,9 @@ export default async function MisClasesPage() {
 
               return (
                 <AnimatedItem key={clase.id}>
-                  <div
+                  <Link
+                    href={`/dashboard/mis-clases/${clase.id}`}
+                    className="clase-card"
                     style={{
                       background: "white",
                       borderRadius: "14px",
@@ -253,6 +265,8 @@ export default async function MisClasesPage() {
                       overflow: "hidden",
                       display: "flex",
                       flexDirection: "column",
+                      textDecoration: "none",
+                      cursor: "pointer",
                     }}
                   >
                     {/* Card body */}
@@ -451,31 +465,13 @@ export default async function MisClasesPage() {
                         )}
                       </div>
 
-                      {/* Detail link */}
-                      {user.role === "teacher" && (
-                        <Link
-                          href={`/dashboard/mis-clases/${clase.id}`}
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            width: 30,
-                            height: 30,
-                            borderRadius: "8px",
-                            color: "#CCCCCC",
-                            textDecoration: "none",
-                            flexShrink: 0,
-                          }}
-                        >
-                          <i className="ti ti-chevron-right" aria-hidden="true" style={{ fontSize: "15px" }} />
-                        </Link>
-                      )}
                     </div>
-                  </div>
+                  </Link>
                 </AnimatedItem>
               );
             })}
           </AnimatedList>
+          </>
         )}
       </div>
     </PageTransition>

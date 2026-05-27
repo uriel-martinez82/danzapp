@@ -332,29 +332,44 @@ export default async function MiClaseDetailPage({
 
             {/* ── Botón tomar asistencia ── */}
             {canAttend && (
-              <Link
-                href={`/dashboard/mis-clases/${id}/asistencia`}
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "8px",
-                  background: "#FF3D5E",
-                  color: "white",
-                  borderRadius: "10px",
-                  padding: "12px 24px",
-                  fontFamily: "var(--font-jakarta)",
-                  fontSize: "14px",
-                  fontWeight: 500,
-                  textDecoration: "none",
-                }}
-              >
-                <i
-                  className="ti ti-clipboard-list"
-                  aria-hidden="true"
-                  style={{ fontSize: "16px" }}
-                />
-                Tomar asistencia hoy
-              </Link>
+              <>
+                <style>{`
+                  .attend-btn {
+                    transition: background 0.15s ease, transform 0.18s ease;
+                  }
+                  .attend-btn:hover {
+                    background: #222 !important;
+                    transform: translateY(-2px);
+                  }
+                  .attend-btn:active {
+                    transform: translateY(0);
+                  }
+                `}</style>
+                <Link
+                  href={`/dashboard/mis-clases/${id}/asistencia`}
+                  className="attend-btn"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "10px",
+                    background: "#111111",
+                    color: "white",
+                    borderRadius: "12px",
+                    padding: "14px 28px",
+                    fontFamily: "var(--font-jakarta)",
+                    fontSize: "14px",
+                    fontWeight: 600,
+                    textDecoration: "none",
+                  }}
+                >
+                  <i
+                    className="ti ti-clipboard-check"
+                    aria-hidden="true"
+                    style={{ fontSize: "16px", color: "#FF3D5E" }}
+                  />
+                  Tomar asistencia
+                </Link>
+              </>
             )}
           </div>
 
