@@ -66,14 +66,16 @@ const navItems: {
   label:    string;
   colorKey: string;
   roles:    string[];
+  badge:    boolean;
 }[] = [
-  { href: "/dashboard",            icon: "ti-home",        label: "Dashboard",   colorKey: "dashboard",   roles: ["admin", "teacher", "student"] },
-  { href: "/dashboard/alumnos",    icon: "ti-users",       label: "Alumnos",     colorKey: "alumnos",     roles: ["admin"] },
-  { href: "/dashboard/clases",     icon: "ti-calendar",    label: "Clases",      colorKey: "clases",      roles: ["admin"] },
-  { href: "/dashboard/mis-clases", icon: "ti-calendar",    label: "Mis Clases",  colorKey: "clases",      roles: ["teacher", "student"] },
-  { href: "/dashboard/comunicados",icon: "ti-bell",        label: "Comunicados", colorKey: "comunicados", roles: ["admin", "teacher", "student"] },
-  { href: "/dashboard/pagos",      icon: "ti-credit-card", label: "Pagos",       colorKey: "pagos",       roles: ["admin"] },
-  { href: "/dashboard/mis-pagos",  icon: "ti-credit-card", label: "Mis Pagos",   colorKey: "pagos",       roles: ["student"] },
+  { href: "/dashboard",                  icon: "ti-home",        label: "Dashboard",       colorKey: "dashboard",   roles: ["admin", "teacher", "student"], badge: false },
+  { href: "/dashboard/alumnos",          icon: "ti-users",       label: "Alumnos",         colorKey: "alumnos",     roles: ["admin"],                        badge: false },
+  { href: "/dashboard/clases",           icon: "ti-calendar",    label: "Clases",          colorKey: "clases",      roles: ["admin"],                        badge: false },
+  { href: "/dashboard/mis-clases",       icon: "ti-calendar",    label: "Mis Clases",      colorKey: "clases",      roles: ["teacher", "student"],           badge: false },
+  { href: "/dashboard/notificaciones",   icon: "ti-bell",        label: "Notificaciones",  colorKey: "comunicados", roles: ["admin", "teacher", "student"],  badge: true  },
+  { href: "/dashboard/comunicados",      icon: "ti-speakerphone",label: "Comunicados",     colorKey: "comunicados", roles: ["admin", "teacher", "student"],  badge: false },
+  { href: "/dashboard/pagos",            icon: "ti-credit-card", label: "Pagos",           colorKey: "pagos",       roles: ["admin"],                        badge: false },
+  { href: "/dashboard/mis-pagos",        icon: "ti-credit-card", label: "Mis Pagos",       colorKey: "pagos",       roles: ["student"],                      badge: false },
 ];
 
 const roleLabels: Record<string, string> = {
@@ -102,7 +104,8 @@ function isItemActive(pathname: string, href: string): boolean {
 export default function Sidebar({ user }: { user: User }) {
   const pathname      = usePathname();
   const activeSection = getActiveSection(pathname);
-  const [hoveredKey, setHoveredKey] = useState<string | null>(null);
+  const [hoveredKey, setHoveredKey]     = useState<string | null>(null);
+  const [unreadCount, setUnreadCount]   = useState(0);
 
   // Solo mostrar los items permitidos para el rol del usuario
   const visibleItems = navItems.filter((item) => item.roles.includes(user.role));
@@ -112,6 +115,30 @@ export default function Sidebar({ user }: { user: User }) {
     document.body.setAttribute("data-section", activeSection);
     return () => { document.body.removeAttribute("data-section"); };
   }, [activeSection]);
+
+  // Badge de notificaciones no leídas
+  useEffect(() => {
+    async function fetchUnread() {
+      try {
+        const res = await fetch("/api/notificaciones");
+        if (!res.ok) return;
+        const data = await res.json() as { readByMe: boolean }[];
+        if (Array.isArray(data)) {
+          setUnreadCount(data.filter((n) => !n.readByMe).length);
+        }
+      } catch { /* silencioso */ }
+    }
+
+    fetchUnread();
+
+    // Re-fetch cuando el usuario vuelve a la pestaña o la página de notifs dispara el evento
+    window.addEventListener("focus", fetchUnread);
+    window.addEventListener("notifications-updated", fetchUnread);
+    return () => {
+      window.removeEventListener("focus", fetchUnread);
+      window.removeEventListener("notifications-updated", fetchUnread);
+    };
+  }, []);
 
   const initial     = user.firstName?.[0] ?? user.email[0].toUpperCase();
   const displayName = user.firstName
@@ -295,7 +322,34 @@ export default function Sidebar({ user }: { user: User }) {
                 </motion.span>
               )}
 
-              {item.label}
+              <span style={{ flex: 1 }}>{item.label}</span>
+
+              {/* Badge de no leídas */}
+              {item.badge && unreadCount > 0 && (
+                <motion.span
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: "spring", stiffness: 500, damping: 20 }}
+                  style={{
+                    display:        "flex",
+                    alignItems:     "center",
+                    justifyContent: "center",
+                    minWidth:       18,
+                    height:         18,
+                    borderRadius:   "9px",
+                    background:     "#FF3D5E",
+                    color:          "white",
+                    fontFamily:     "var(--font-jakarta)",
+                    fontSize:       "10px",
+                    fontWeight:     700,
+                    paddingLeft:    unreadCount > 9 ? "5px" : "0",
+                    paddingRight:   unreadCount > 9 ? "5px" : "0",
+                    flexShrink:     0,
+                  }}
+                >
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </motion.span>
+              )}
             </Link>
           );
         })}

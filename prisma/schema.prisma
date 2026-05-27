@@ -20,6 +20,7 @@ model School {
   classes       Class[]
   payments      Payment[]
   announcements Announcement[]
+  notifications Notification[]
 }
 
 model User {
@@ -38,11 +39,13 @@ model User {
   school               School?             @relation(fields: [schoolId], references: [id])
   enrollments          Enrollment[]
   payments             Payment[]
-  evaluationsReceived  Evaluation[]       @relation("StudentEvaluations")
-  evaluationsGiven     Evaluation[]       @relation("TeacherEvaluations")
+  evaluationsReceived  Evaluation[]        @relation("StudentEvaluations")
+  evaluationsGiven     Evaluation[]        @relation("TeacherEvaluations")
   announcementsCreated Announcement[]
   announcementReads    AnnouncementRead[]
   classesTaught        Class[]
+  notificationsAuthored Notification[]     @relation("NotificationAuthor")
+  notificationReads     NotificationRead[]
 }
 
 model Class {
@@ -150,4 +153,29 @@ model Evaluation {
   student User  @relation("StudentEvaluations", fields: [studentId], references: [id])
   teacher User  @relation("TeacherEvaluations", fields: [teacherId], references: [id])
   class   Class @relation(fields: [classId], references: [id])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  schoolId  String
+  title     String
+  body      String
+  createdAt DateTime @default(now())
+  createdBy String
+
+  school  School             @relation(fields: [schoolId], references: [id])
+  author  User               @relation("NotificationAuthor", fields: [createdBy], references: [id])
+  reads   NotificationRead[]
+}
+
+model NotificationRead {
+  id             String       @id @default(cuid())
+  notificationId String
+  userId         String
+  readAt         DateTime     @default(now())
+
+  notification   Notification @relation(fields: [notificationId], references: [id])
+  user           User         @relation(fields: [userId], references: [id])
+
+  @@unique([notificationId, userId])
 }
