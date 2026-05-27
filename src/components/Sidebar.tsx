@@ -379,6 +379,30 @@ export default function Sidebar({ user }: { user: User }) {
           />
         </Link>
 
+        {/* Link "Usuarios" — solo para admins */}
+        {user.role === "admin" && (
+          <Link
+            href="/dashboard/usuarios"
+            style={{
+              display:        "flex",
+              alignItems:     "center",
+              gap:            "6px",
+              fontFamily:     "var(--font-jakarta)",
+              fontWeight:     400,
+              fontSize:       "12px",
+              color:          "rgba(255,255,255,0.35)",
+              textDecoration: "none",
+              marginBottom:   "10px",
+              transition:     "color 0.15s",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.65)")}
+            onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.35)")}
+          >
+            <i className="ti ti-users" aria-hidden="true" style={{ fontSize: "13px" }} />
+            Usuarios
+          </Link>
+        )}
+
         <SignOutButton redirectUrl="/sign-in">
           <button
             style={{
