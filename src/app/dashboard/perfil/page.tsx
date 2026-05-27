@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import PageTransition from "@/components/PageTransition";
 
@@ -19,6 +19,8 @@ type UserProfile = {
   createdAt: string;
 };
 
+type ToastType = "success" | "error";
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const roleLabels: Record<string, { label: string; bg: string; color: string; border: string }> = {
@@ -31,21 +33,57 @@ function getInitials(firstName: string, lastName: string): string {
   return `${firstName[0] ?? ""}${lastName[0] ?? ""}`.toUpperCase();
 }
 
+// ── Label helper para inputs ──────────────────────────────────────────────────
+
+function FieldLabel({ children, muted = false }: { children: React.ReactNode; muted?: boolean }) {
+  return (
+    <label
+      style={{
+        display:       "block",
+        fontFamily:    "var(--font-jakarta)",
+        fontSize:      "11px",
+        fontWeight:    500,
+        color:         muted ? "#CCCCCC" : "#999999",
+        textTransform: "uppercase",
+        letterSpacing: "0.07em",
+        marginBottom:  "6px",
+      }}
+    >
+      {children}
+    </label>
+  );
+}
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function PerfilPage() {
-  const [profile, setProfile]         = useState<UserProfile | null>(null);
-  const [loading, setLoading]         = useState(true);
-  const [saving, setSaving]           = useState(false);
-  const [saved, setSaved]             = useState(false);
-  const [error, setError]             = useState<string | null>(null);
-  const [fieldError, setFieldError]   = useState<string | null>(null);
+  const [profile, setProfile]       = useState<UserProfile | null>(null);
+  const [loading, setLoading]       = useState(true);
+  const [saving, setSaving]         = useState(false);
+  const [uploading, setUploading]   = useState(false);
+  const [avatarHover, setAvatarHover] = useState(false);
+
+  // Toast
+  const [toast, setToast]           = useState<{ msg: string; type: ToastType } | null>(null);
+  const toastTimer                  = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Form state
-  const [firstName, setFirstName]     = useState("");
-  const [lastName, setLastName]       = useState("");
-  const [phone, setPhone]             = useState("");
-  const [birthDate, setBirthDate]     = useState("");
+  const [firstName, setFirstName]   = useState("");
+  const [lastName,  setLastName]    = useState("");
+  const [phone,     setPhone]       = useState("");
+  const [birthDate, setBirthDate]   = useState("");
+  const [fieldError, setFieldError] = useState<string | null>(null);
+
+  // File input ref
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // ── Toast helper ───────────────────────────────────────────────────────────
+
+  function showToast(msg: string, type: ToastType = "success") {
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    setToast({ msg, type });
+    toastTimer.current = setTimeout(() => setToast(null), 3500);
+  }
 
   // ── Cargar perfil ──────────────────────────────────────────────────────────
 
@@ -55,32 +93,56 @@ export default function PerfilPage() {
       .then((data: UserProfile) => {
         setProfile(data);
         setFirstName(data.firstName ?? "");
-        setLastName(data.lastName ?? "");
-        setPhone(data.phone ?? "");
+        setLastName(data.lastName   ?? "");
+        setPhone(data.phone         ?? "");
         setBirthDate(data.birthDate ?? "");
       })
-      .catch(() => setError("Error al cargar el perfil."))
+      .catch(() => showToast("Error al cargar el perfil.", "error"))
       .finally(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ── Guardar cambios ────────────────────────────────────────────────────────
+  // ── Subir avatar ───────────────────────────────────────────────────────────
+
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Reset input para poder re-seleccionar el mismo archivo
+    e.target.value = "";
+
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+
+      const res = await fetch("/api/perfil/avatar", { method: "POST", body: fd });
+      const json = await res.json() as { avatarUrl?: string; error?: string };
+
+      if (!res.ok) {
+        showToast(json.error ?? "Error al subir la imagen.", "error");
+        return;
+      }
+
+      // Actualizar perfil local con la nueva URL
+      setProfile((prev) => prev ? { ...prev, avatarUrl: json.avatarUrl! } : prev);
+      showToast("Foto actualizada");
+    } catch {
+      showToast("Error de red al subir la imagen.", "error");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  // ── Guardar cambios de perfil ──────────────────────────────────────────────
 
   async function handleSave() {
     setFieldError(null);
-    setError(null);
 
-    if (!firstName.trim()) {
-      setFieldError("El nombre es requerido.");
-      return;
-    }
-    if (!lastName.trim()) {
-      setFieldError("El apellido es requerido.");
-      return;
-    }
+    if (!firstName.trim()) { setFieldError("El nombre es requerido.");   return; }
+    if (!lastName.trim())  { setFieldError("El apellido es requerido."); return; }
 
     setSaving(true);
-    setSaved(false);
-
     try {
       const res = await fetch("/api/perfil", {
         method:  "PATCH",
@@ -93,37 +155,35 @@ export default function PerfilPage() {
         }),
       });
 
+      const json = await res.json() as UserProfile & { error?: string };
       if (!res.ok) {
-        const json = await res.json().catch(() => ({}));
-        setError((json as { error?: string }).error ?? "Error al guardar.");
+        showToast((json as unknown as { error?: string }).error ?? "Error al guardar.", "error");
         return;
       }
 
-      const updated: UserProfile = await res.json();
-      setProfile(updated);
-      setSaved(true);
-      setTimeout(() => setSaved(false), 3500);
+      setProfile(json);
+      showToast("Perfil actualizado");
     } catch {
-      setError("Error de red. Intentá de nuevo.");
+      showToast("Error de red. Intentá de nuevo.", "error");
     } finally {
       setSaving(false);
     }
   }
 
-  // ── Loading skeleton ───────────────────────────────────────────────────────
+  // ── Loading ────────────────────────────────────────────────────────────────
 
   if (loading) {
     return (
       <PageTransition>
         <div
           style={{
-            display:       "flex",
-            alignItems:    "center",
-            justifyContent:"center",
-            minHeight:     "300px",
-            fontFamily:    "var(--font-jakarta)",
-            fontSize:      "13px",
-            color:         "#AAAAAA",
+            display:        "flex",
+            alignItems:     "center",
+            justifyContent: "center",
+            minHeight:      "300px",
+            fontFamily:     "var(--font-jakarta)",
+            fontSize:       "13px",
+            color:          "#AAAAAA",
           }}
         >
           Cargando perfil…
@@ -135,33 +195,40 @@ export default function PerfilPage() {
   if (!profile) {
     return (
       <PageTransition>
-        <div
-          style={{
-            padding:      "40px",
-            textAlign:    "center",
-            fontFamily:   "var(--font-jakarta)",
-            fontSize:     "13px",
-            color:        "#991B1B",
-          }}
-        >
-          {error ?? "No se pudo cargar el perfil."}
+        <div style={{ padding: "40px", textAlign: "center", fontFamily: "var(--font-jakarta)", fontSize: "13px", color: "#991B1B" }}>
+          No se pudo cargar el perfil.
         </div>
       </PageTransition>
     );
   }
 
-  const initials   = getInitials(profile.firstName, profile.lastName);
-  const roleCfg    = roleLabels[profile.role] ?? { label: profile.role, bg: "#F4F2EE", color: "#555555", border: "#EEECE8" };
+  const initials    = getInitials(profile.firstName, profile.lastName);
+  const roleCfg     = roleLabels[profile.role] ?? { label: profile.role, bg: "#F4F2EE", color: "#555555", border: "#EEECE8" };
   const memberSince = new Date(profile.createdAt).toLocaleDateString("es-AR", {
     day: "numeric", month: "long", year: "numeric",
   });
 
+  const inputStyle: React.CSSProperties = {
+    width:        "100%",
+    padding:      "12px 14px",
+    borderRadius: "10px",
+    border:       "1px solid #EEECE8",
+    fontFamily:   "var(--font-jakarta)",
+    fontSize:     "14px",
+    color:        "#111111",
+    background:   "#FAFAF8",
+    outline:      "none",
+    boxSizing:    "border-box",
+    transition:   "border-color 0.15s",
+  };
+
   return (
     <PageTransition>
-      {/* ── Toast de éxito ── */}
+      {/* ── Toast ── */}
       <AnimatePresence>
-        {saved && (
+        {toast && (
           <motion.div
+            key={toast.msg}
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
@@ -174,18 +241,24 @@ export default function PerfilPage() {
               display:      "flex",
               alignItems:   "center",
               gap:          "8px",
-              background:   "#166534",
+              background:   toast.type === "error" ? "#991B1B" : "#166534",
               color:        "white",
               borderRadius: "12px",
               padding:      "12px 20px",
               fontFamily:   "var(--font-jakarta)",
               fontSize:     "13px",
               fontWeight:   500,
-              boxShadow:    "0 4px 20px rgba(22,101,52,0.35)",
+              boxShadow:    toast.type === "error"
+                ? "0 4px 20px rgba(153,27,27,0.35)"
+                : "0 4px 20px rgba(22,101,52,0.35)",
             }}
           >
-            <i className="ti ti-circle-check" aria-hidden="true" style={{ fontSize: "16px" }} />
-            Perfil actualizado
+            <i
+              className={`ti ${toast.type === "error" ? "ti-alert-circle" : "ti-circle-check"}`}
+              aria-hidden="true"
+              style={{ fontSize: "16px" }}
+            />
+            {toast.msg}
           </motion.div>
         )}
       </AnimatePresence>
@@ -205,14 +278,7 @@ export default function PerfilPage() {
           >
             Mi perfil
           </h1>
-          <p
-            style={{
-              fontFamily: "var(--font-jakarta)",
-              fontSize:   "13px",
-              color:      "#999999",
-              marginTop:  "4px",
-            }}
-          >
+          <p style={{ fontFamily: "var(--font-jakarta)", fontSize: "13px", color: "#999999", marginTop: "4px" }}>
             Miembro desde {memberSince}
           </p>
         </div>
@@ -230,27 +296,124 @@ export default function PerfilPage() {
             gap:          "24px",
           }}
         >
-          {/* Avatar 80px */}
+          {/* ── Avatar clickeable ── */}
           <div
+            onClick={() => !uploading && fileInputRef.current?.click()}
+            onMouseEnter={() => setAvatarHover(true)}
+            onMouseLeave={() => setAvatarHover(false)}
             style={{
-              width:           80,
-              height:          80,
-              borderRadius:    "50%",
-              background:      "#FF3D5E",
-              display:         "flex",
-              alignItems:      "center",
-              justifyContent:  "center",
-              color:           "white",
-              fontFamily:      "var(--font-fraunces)",
-              fontWeight:      400,
-              fontSize:        "28px",
-              letterSpacing:   "-0.02em",
-              flexShrink:      0,
-              boxShadow:       "0 4px 16px rgba(255,61,94,0.28)",
+              position:       "relative",
+              width:          80,
+              height:         80,
+              borderRadius:   "50%",
+              flexShrink:     0,
+              cursor:         uploading ? "wait" : "pointer",
+              overflow:       "hidden",     // overlay no se sale del círculo
             }}
           >
-            {initials}
+            {/* Imagen o iniciales */}
+            {profile.avatarUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={profile.avatarUrl}
+                alt={`${profile.firstName} ${profile.lastName}`}
+                width={80}
+                height={80}
+                style={{
+                  width:      "100%",
+                  height:     "100%",
+                  objectFit:  "cover",
+                  display:    "block",
+                  borderRadius: "50%",
+                }}
+              />
+            ) : (
+              <div
+                style={{
+                  width:           "100%",
+                  height:          "100%",
+                  background:      "#FF3D5E",
+                  display:         "flex",
+                  alignItems:      "center",
+                  justifyContent:  "center",
+                  color:           "white",
+                  fontFamily:      "var(--font-fraunces)",
+                  fontWeight:      400,
+                  fontSize:        "28px",
+                  letterSpacing:   "-0.02em",
+                  boxShadow:       "0 4px 16px rgba(255,61,94,0.28)",
+                }}
+              >
+                {initials}
+              </div>
+            )}
+
+            {/* Overlay de cámara (hover) */}
+            <div
+              style={{
+                position:       "absolute",
+                inset:          0,
+                borderRadius:   "50%",
+                background:     "rgba(0,0,0,0.42)",
+                display:        "flex",
+                flexDirection:  "column",
+                alignItems:     "center",
+                justifyContent: "center",
+                gap:            "3px",
+                opacity:        (avatarHover && !uploading) ? 1 : 0,
+                transition:     "opacity 0.18s ease",
+                pointerEvents:  "none",
+              }}
+            >
+              <i className="ti ti-camera" aria-hidden="true" style={{ fontSize: "20px", color: "white" }} />
+              <span
+                style={{
+                  fontFamily:  "var(--font-jakarta)",
+                  fontSize:    "9px",
+                  fontWeight:  600,
+                  color:       "white",
+                  letterSpacing: "0.04em",
+                  textTransform: "uppercase",
+                }}
+              >
+                Cambiar
+              </span>
+            </div>
+
+            {/* Spinner mientras sube */}
+            {uploading && (
+              <div
+                style={{
+                  position:       "absolute",
+                  inset:          0,
+                  borderRadius:   "50%",
+                  background:     "rgba(0,0,0,0.55)",
+                  display:        "flex",
+                  alignItems:     "center",
+                  justifyContent: "center",
+                }}
+              >
+                <i
+                  className="ti ti-loader-2"
+                  aria-hidden="true"
+                  style={{
+                    fontSize:  "24px",
+                    color:     "white",
+                    animation: "spin 1s linear infinite",
+                  }}
+                />
+              </div>
+            )}
           </div>
+
+          {/* Input file oculto */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleFileChange}
+            style={{ display: "none" }}
+          />
 
           {/* Info */}
           <div style={{ flex: 1, minWidth: 0 }}>
@@ -269,26 +432,9 @@ export default function PerfilPage() {
             </h2>
 
             {/* Email */}
-            <div
-              style={{
-                display:    "flex",
-                alignItems: "center",
-                gap:        "6px",
-                marginBottom: "12px",
-              }}
-            >
-              <i
-                className="ti ti-mail"
-                aria-hidden="true"
-                style={{ fontSize: "13px", color: "#AAAAAA" }}
-              />
-              <span
-                style={{
-                  fontFamily: "var(--font-jakarta)",
-                  fontSize:   "13px",
-                  color:      "#777777",
-                }}
-              >
+            <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "12px" }}>
+              <i className="ti ti-mail" aria-hidden="true" style={{ fontSize: "13px", color: "#AAAAAA" }} />
+              <span style={{ fontFamily: "var(--font-jakarta)", fontSize: "13px", color: "#777777" }}>
                 {profile.email}
               </span>
             </div>
@@ -325,13 +471,8 @@ export default function PerfilPage() {
             overflow:     "hidden",
           }}
         >
-          {/* Header de la card */}
-          <div
-            style={{
-              padding:      "18px 28px 14px",
-              borderBottom: "1px solid #F4F2EE",
-            }}
-          >
+          {/* Header */}
+          <div style={{ padding: "18px 28px 14px", borderBottom: "1px solid #F4F2EE" }}>
             <h3
               style={{
                 fontFamily:    "var(--font-fraunces)",
@@ -345,9 +486,8 @@ export default function PerfilPage() {
             </h3>
           </div>
 
-          {/* Campos del formulario */}
           <div style={{ padding: "24px 28px 28px" }}>
-            {/* Grid 2 columnas: nombre y apellido */}
+            {/* Nombre + Apellido */}
             <div
               style={{
                 display:             "grid",
@@ -357,83 +497,32 @@ export default function PerfilPage() {
               }}
             >
               <div>
-                <label
-                  style={{
-                    display:     "block",
-                    fontFamily:  "var(--font-jakarta)",
-                    fontSize:    "11px",
-                    fontWeight:  500,
-                    color:       "#999999",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.07em",
-                    marginBottom: "6px",
-                  }}
-                >
-                  Nombre
-                </label>
+                <FieldLabel>Nombre</FieldLabel>
                 <input
                   type="text"
                   value={firstName}
                   onChange={(e) => { setFirstName(e.target.value); setFieldError(null); }}
                   placeholder="Tu nombre"
-                  style={{
-                    width:        "100%",
-                    padding:      "12px 14px",
-                    borderRadius: "10px",
-                    border:       "1px solid #EEECE8",
-                    fontFamily:   "var(--font-jakarta)",
-                    fontSize:     "14px",
-                    color:        "#111111",
-                    background:   "#FAFAF8",
-                    outline:      "none",
-                    boxSizing:    "border-box",
-                    transition:   "border-color 0.15s",
-                  }}
+                  style={inputStyle}
                   onFocus={(e) => (e.currentTarget.style.borderColor = "#FF3D5E")}
                   onBlur={(e)  => (e.currentTarget.style.borderColor = "#EEECE8")}
                 />
               </div>
-
               <div>
-                <label
-                  style={{
-                    display:     "block",
-                    fontFamily:  "var(--font-jakarta)",
-                    fontSize:    "11px",
-                    fontWeight:  500,
-                    color:       "#999999",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.07em",
-                    marginBottom: "6px",
-                  }}
-                >
-                  Apellido
-                </label>
+                <FieldLabel>Apellido</FieldLabel>
                 <input
                   type="text"
                   value={lastName}
                   onChange={(e) => { setLastName(e.target.value); setFieldError(null); }}
                   placeholder="Tu apellido"
-                  style={{
-                    width:        "100%",
-                    padding:      "12px 14px",
-                    borderRadius: "10px",
-                    border:       "1px solid #EEECE8",
-                    fontFamily:   "var(--font-jakarta)",
-                    fontSize:     "14px",
-                    color:        "#111111",
-                    background:   "#FAFAF8",
-                    outline:      "none",
-                    boxSizing:    "border-box",
-                    transition:   "border-color 0.15s",
-                  }}
+                  style={inputStyle}
                   onFocus={(e) => (e.currentTarget.style.borderColor = "#FF3D5E")}
                   onBlur={(e)  => (e.currentTarget.style.borderColor = "#EEECE8")}
                 />
               </div>
             </div>
 
-            {/* Grid 2 columnas: teléfono y fecha de nac. */}
+            {/* Teléfono + Fecha de nac. */}
             <div
               style={{
                 display:             "grid",
@@ -443,75 +532,24 @@ export default function PerfilPage() {
               }}
             >
               <div>
-                <label
-                  style={{
-                    display:     "block",
-                    fontFamily:  "var(--font-jakarta)",
-                    fontSize:    "11px",
-                    fontWeight:  500,
-                    color:       "#999999",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.07em",
-                    marginBottom: "6px",
-                  }}
-                >
-                  Teléfono
-                </label>
+                <FieldLabel>Teléfono</FieldLabel>
                 <input
                   type="tel"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="+54 11 1234-5678"
-                  style={{
-                    width:        "100%",
-                    padding:      "12px 14px",
-                    borderRadius: "10px",
-                    border:       "1px solid #EEECE8",
-                    fontFamily:   "var(--font-jakarta)",
-                    fontSize:     "14px",
-                    color:        "#111111",
-                    background:   "#FAFAF8",
-                    outline:      "none",
-                    boxSizing:    "border-box",
-                    transition:   "border-color 0.15s",
-                  }}
+                  style={inputStyle}
                   onFocus={(e) => (e.currentTarget.style.borderColor = "#FF3D5E")}
                   onBlur={(e)  => (e.currentTarget.style.borderColor = "#EEECE8")}
                 />
               </div>
-
               <div>
-                <label
-                  style={{
-                    display:     "block",
-                    fontFamily:  "var(--font-jakarta)",
-                    fontSize:    "11px",
-                    fontWeight:  500,
-                    color:       "#999999",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.07em",
-                    marginBottom: "6px",
-                  }}
-                >
-                  Fecha de nacimiento
-                </label>
+                <FieldLabel>Fecha de nacimiento</FieldLabel>
                 <input
                   type="date"
                   value={birthDate}
                   onChange={(e) => setBirthDate(e.target.value)}
-                  style={{
-                    width:        "100%",
-                    padding:      "12px 14px",
-                    borderRadius: "10px",
-                    border:       "1px solid #EEECE8",
-                    fontFamily:   "var(--font-jakarta)",
-                    fontSize:     "14px",
-                    color:        birthDate ? "#111111" : "#AAAAAA",
-                    background:   "#FAFAF8",
-                    outline:      "none",
-                    boxSizing:    "border-box",
-                    transition:   "border-color 0.15s",
-                  }}
+                  style={{ ...inputStyle, color: birthDate ? "#111111" : "#AAAAAA" }}
                   onFocus={(e) => (e.currentTarget.style.borderColor = "#FF3D5E")}
                   onBlur={(e)  => (e.currentTarget.style.borderColor = "#EEECE8")}
                 />
@@ -520,20 +558,7 @@ export default function PerfilPage() {
 
             {/* Email — solo lectura */}
             <div style={{ marginBottom: "28px" }}>
-              <label
-                style={{
-                  display:     "block",
-                  fontFamily:  "var(--font-jakarta)",
-                  fontSize:    "11px",
-                  fontWeight:  500,
-                  color:       "#CCCCCC",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.07em",
-                  marginBottom: "6px",
-                }}
-              >
-                Email (no editable)
-              </label>
+              <FieldLabel muted>Email (no editable)</FieldLabel>
               <div
                 style={{
                   padding:      "12px 14px",
@@ -555,7 +580,7 @@ export default function PerfilPage() {
 
             {/* Error de validación */}
             <AnimatePresence>
-              {(fieldError || error) && (
+              {fieldError && (
                 <motion.div
                   initial={{ opacity: 0, y: -6 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -575,7 +600,7 @@ export default function PerfilPage() {
                   }}
                 >
                   <i className="ti ti-alert-circle" aria-hidden="true" style={{ fontSize: "14px" }} />
-                  {fieldError ?? error}
+                  {fieldError}
                 </motion.div>
               )}
             </AnimatePresence>
@@ -605,11 +630,8 @@ export default function PerfilPage() {
             >
               {saving ? (
                 <>
-                  <i
-                    className="ti ti-loader-2"
-                    aria-hidden="true"
-                    style={{ fontSize: "16px", animation: "spin 1s linear infinite" }}
-                  />
+                  <i className="ti ti-loader-2" aria-hidden="true"
+                    style={{ fontSize: "16px", animation: "spin 1s linear infinite" }} />
                   Guardando…
                 </>
               ) : (
