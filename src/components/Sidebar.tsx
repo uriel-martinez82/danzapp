@@ -308,13 +308,20 @@ export default function Sidebar({ user }: { user: User }) {
           borderTop: "1px solid rgba(255,255,255,0.07)",
         }}
       >
-        <div
+        <Link
+          href="/dashboard/perfil"
           style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "10px",
-            marginBottom: "12px",
+            display:        "flex",
+            alignItems:     "center",
+            gap:            "10px",
+            marginBottom:   "12px",
+            textDecoration: "none",
+            borderRadius:   "8px",
+            padding:        "4px 2px",
+            transition:     "opacity 0.15s",
           }}
+          onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.7")}
+          onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
         >
           {/* Avatar */}
           <div
@@ -337,7 +344,7 @@ export default function Sidebar({ user }: { user: User }) {
           </div>
 
           {/* Info */}
-          <div style={{ minWidth: 0 }}>
+          <div style={{ minWidth: 0, flex: 1 }}>
             <div
               style={{
                 fontFamily: "var(--font-jakarta)",
@@ -363,7 +370,14 @@ export default function Sidebar({ user }: { user: User }) {
               {roleLabels[user.role] ?? user.role}
             </div>
           </div>
-        </div>
+
+          {/* Chevron hint */}
+          <i
+            className="ti ti-chevron-right"
+            aria-hidden="true"
+            style={{ fontSize: "12px", color: "rgba(255,255,255,0.15)", flexShrink: 0 }}
+          />
+        </Link>
 
         <SignOutButton redirectUrl="/sign-in">
           <button
