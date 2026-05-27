@@ -1,47 +1,160 @@
 import { currentUser } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import PageTransition from "@/components/PageTransition";
 import { AnimatedList, AnimatedItem } from "@/components/AnimatedList";
 
-const stats = [
-  {
-    label: "Alumnos activos",
-    value: "—",
-    icon: "ti-users",
-    iconBg: "#FFF0F2",
-    iconColor: "#FF3D5E",
-  },
-  {
-    label: "Clases esta semana",
-    value: "—",
-    icon: "ti-calendar",
-    iconBg: "#F0FAF5",
-    iconColor: "#1D9E75",
-  },
-  {
-    label: "Pagos pendientes",
-    value: "—",
-    icon: "ti-credit-card",
-    iconBg: "#FEF8EE",
-    iconColor: "#D97706",
-  },
-  {
-    label: "Comunicados",
-    value: "—",
-    icon: "ti-bell",
-    iconBg: "#EFF5FE",
-    iconColor: "#3B82F6",
-  },
-];
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+type StatCard = {
+  label:      string;
+  value:      number | string;
+  icon:       string;
+  iconBg:     string;
+  iconColor:  string;
+};
+
+// ── Stat card component ───────────────────────────────────────────────────────
+
+function StatCard({ stat }: { stat: StatCard }) {
+  return (
+    <div
+      style={{
+        background: "white",
+        borderRadius: "14px",
+        border: "1px solid #EEECE8",
+        padding: "20px",
+        height: "100%",
+      }}
+    >
+      <div
+        style={{
+          width: 36,
+          height: 36,
+          borderRadius: "10px",
+          background: stat.iconBg,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          marginBottom: "16px",
+        }}
+      >
+        <i
+          className={`ti ${stat.icon}`}
+          aria-hidden="true"
+          style={{ fontSize: "16px", color: stat.iconColor, lineHeight: 1 }}
+        />
+      </div>
+      <div
+        style={{
+          fontFamily: "var(--font-fraunces)",
+          fontWeight: 400,
+          fontSize: "32px",
+          lineHeight: 1,
+          letterSpacing: "-0.03em",
+          color: "#111111",
+        }}
+      >
+        {stat.value}
+      </div>
+      <div
+        style={{
+          fontFamily: "var(--font-jakarta)",
+          fontWeight: 400,
+          fontSize: "11px",
+          letterSpacing: "0.08em",
+          textTransform: "uppercase",
+          color: "#999999",
+          marginTop: "5px",
+        }}
+      >
+        {stat.label}
+      </div>
+    </div>
+  );
+}
+
+// ── Panel component ───────────────────────────────────────────────────────────
+
+function Panel({
+  title,
+  linkHref,
+  linkLabel,
+  empty,
+}: {
+  title: string;
+  linkHref: string;
+  linkLabel: string;
+  empty: string;
+}) {
+  return (
+    <div
+      style={{
+        background: "white",
+        borderRadius: "14px",
+        border: "1px solid #EEECE8",
+        overflow: "hidden",
+      }}
+    >
+      <div
+        style={{
+          padding: "18px 20px 14px",
+          borderBottom: "1px solid #F4F2EE",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        <h2
+          style={{
+            fontFamily: "var(--font-fraunces)",
+            fontWeight: 400,
+            fontSize: "16px",
+            letterSpacing: "-0.02em",
+            color: "#111111",
+          }}
+        >
+          {title}
+        </h2>
+        <Link
+          href={linkHref}
+          style={{
+            fontFamily: "var(--font-jakarta)",
+            fontWeight: 500,
+            fontSize: "12px",
+            color: "#FF3D5E",
+            textDecoration: "none",
+          }}
+        >
+          {linkLabel}
+        </Link>
+      </div>
+      <div style={{ padding: "16px 20px" }}>
+        <div
+          style={{
+            fontFamily: "var(--font-jakarta)",
+            fontWeight: 400,
+            fontSize: "13px",
+            color: "#999999",
+            textAlign: "center",
+            padding: "28px 0",
+          }}
+        >
+          {empty}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Page ─────────────────────────────────────────────────────────────────────
 
 export default async function DashboardPage() {
   const clerkUser = await currentUser();
   if (!clerkUser) redirect("/sign-in");
 
-  const user = await prisma.user.findUnique({
-    where: { id: clerkUser.id },
-  });
+  const user = await prisma.user.findUnique({ where: { id: clerkUser.id } });
   if (!user) redirect("/sign-in");
 
   const hora = new Date().getHours();
@@ -57,12 +170,77 @@ export default async function DashboardPage() {
     day: "numeric",
   });
 
+  // ── Stats por rol ────────────────────────────────────────────────────────────
+
+  let stats: StatCard[] = [];
+
+  if (user.role === "admin" && user.schoolId) {
+    const [totalAlumnos, totalClases, pagosPendientes, totalComunicados] =
+      await Promise.all([
+        prisma.user.count({
+          where: { schoolId: user.schoolId, role: "student", active: true },
+        }),
+        prisma.class.count({
+          where: { schoolId: user.schoolId, active: true },
+        }),
+        prisma.payment.count({
+          where: { schoolId: user.schoolId, status: "pending" },
+        }),
+        prisma.announcement.count({
+          where: { schoolId: user.schoolId },
+        }),
+      ]);
+
+    stats = [
+      { label: "Alumnos activos",   value: totalAlumnos,      icon: "ti-users",       iconBg: "#FFF0F2", iconColor: "#FF3D5E" },
+      { label: "Clases activas",    value: totalClases,       icon: "ti-calendar",    iconBg: "#F0FAF5", iconColor: "#1D9E75" },
+      { label: "Pagos pendientes",  value: pagosPendientes,   icon: "ti-credit-card", iconBg: "#FEF8EE", iconColor: "#D97706" },
+      { label: "Comunicados",       value: totalComunicados,  icon: "ti-bell",        iconBg: "#EFF5FE", iconColor: "#3B82F6" },
+    ];
+  } else if (user.role === "teacher") {
+    const [misClases, misAlumnos] = await Promise.all([
+      prisma.class.count({
+        where: { teacherId: user.id, active: true },
+      }),
+      prisma.enrollment.count({
+        where: { class: { teacherId: user.id }, status: "active" },
+      }),
+    ]);
+
+    stats = [
+      { label: "Mis clases activas",     value: misClases,  icon: "ti-calendar", iconBg: "#F0FAF5", iconColor: "#1D9E75" },
+      { label: "Alumnos en mis clases",  value: misAlumnos, icon: "ti-users",    iconBg: "#FFF0F2", iconColor: "#FF3D5E" },
+    ];
+  } else if (user.role === "student") {
+    const [misClasesAlumno, misPagosPendientes] = await Promise.all([
+      prisma.enrollment.count({
+        where: { studentId: user.id, status: "active" },
+      }),
+      prisma.payment.count({
+        where: { studentId: user.id, status: "pending" },
+      }),
+    ]);
+
+    stats = [
+      { label: "Mis clases",          value: misClasesAlumno,      icon: "ti-calendar",    iconBg: "#F0FAF5", iconColor: "#1D9E75" },
+      { label: "Pagos pendientes",    value: misPagosPendientes,   icon: "ti-credit-card", iconBg: "#FEF8EE", iconColor: "#D97706" },
+    ];
+  }
+
+  // ── Links de paneles según rol ────────────────────────────────────────────────
+
+  const clasesHref = user.role === "admin" ? "/dashboard/clases"  : "/dashboard/mis-clases";
+  const pagosHref  = user.role === "student" ? "/dashboard/mis-pagos" : "/dashboard/pagos";
+
+  // Grid de stats: 4 cols para admin, 2 para los demás
+  const gridCols =
+    user.role === "admin" ? "repeat(4, 1fr)" : "repeat(2, 1fr)";
+
   return (
     <PageTransition>
       <div>
         {/* ── Header ── */}
         <div style={{ padding: "4px 4px 0", marginBottom: "28px" }}>
-          {/* Fecha */}
           <p
             style={{
               fontFamily: "var(--font-jakarta)",
@@ -76,8 +254,6 @@ export default async function DashboardPage() {
           >
             {fechaLarga}
           </p>
-
-          {/* Saludo */}
           <h1
             style={{
               fontFamily: "var(--font-fraunces)",
@@ -97,71 +273,14 @@ export default async function DashboardPage() {
         <AnimatedList
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(4, 1fr)",
+            gridTemplateColumns: gridCols,
             gap: "12px",
             marginBottom: "16px",
           }}
         >
           {stats.map((stat) => (
             <AnimatedItem key={stat.label}>
-              <div
-                style={{
-                  background: "white",
-                  borderRadius: "14px",
-                  border: "1px solid #EEECE8",
-                  padding: "20px",
-                  height: "100%",
-                }}
-              >
-                {/* Icon chip */}
-                <div
-                  style={{
-                    width: 36,
-                    height: 36,
-                    borderRadius: "10px",
-                    background: stat.iconBg,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    marginBottom: "16px",
-                  }}
-                >
-                  <i
-                    className={`ti ${stat.icon}`}
-                    aria-hidden="true"
-                    style={{ fontSize: "16px", color: stat.iconColor, lineHeight: 1 }}
-                  />
-                </div>
-
-                {/* Number */}
-                <div
-                  style={{
-                    fontFamily: "var(--font-fraunces)",
-                    fontWeight: 400,
-                    fontSize: "32px",
-                    lineHeight: 1,
-                    letterSpacing: "-0.03em",
-                    color: "#111111",
-                  }}
-                >
-                  {stat.value}
-                </div>
-
-                {/* Label */}
-                <div
-                  style={{
-                    fontFamily: "var(--font-jakarta)",
-                    fontWeight: 400,
-                    fontSize: "11px",
-                    letterSpacing: "0.08em",
-                    textTransform: "uppercase",
-                    color: "#999999",
-                    marginTop: "5px",
-                  }}
-                >
-                  {stat.label}
-                </div>
-              </div>
+              <StatCard stat={stat} />
             </AnimatedItem>
           ))}
         </AnimatedList>
@@ -174,159 +293,28 @@ export default async function DashboardPage() {
             gap: "12px",
           }}
         >
-          {/* Comunicados */}
-          <div
-            style={{
-              background: "white",
-              borderRadius: "14px",
-              border: "1px solid #EEECE8",
-              overflow: "hidden",
-            }}
-          >
-            {/* Panel header */}
-            <div
-              style={{
-                padding: "18px 20px 14px",
-                borderBottom: "1px solid #F4F2EE",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-              }}
-            >
-              <h2
-                style={{
-                  fontFamily: "var(--font-fraunces)",
-                  fontWeight: 400,
-                  fontSize: "16px",
-                  letterSpacing: "-0.02em",
-                  color: "#111111",
-                }}
-              >
-                Últimos comunicados
-              </h2>
-              <a
-                href="/dashboard/comunicados"
-                style={{
-                  fontFamily: "var(--font-jakarta)",
-                  fontWeight: 500,
-                  fontSize: "12px",
-                  color: "#FF3D5E",
-                  textDecoration: "none",
-                }}
-              >
-                Ver todos
-              </a>
-            </div>
+          <Panel
+            title="Últimos comunicados"
+            linkHref="/dashboard/comunicados"
+            linkLabel="Ver todos"
+            empty="No hay comunicados aún"
+          />
 
-            {/* Panel body */}
-            <div style={{ padding: "16px 20px" }}>
-              <div
-                style={{
-                  fontFamily: "var(--font-jakarta)",
-                  fontWeight: 400,
-                  fontSize: "13px",
-                  color: "#999999",
-                  textAlign: "center",
-                  padding: "28px 0",
-                }}
-              >
-                No hay comunicados aún
-              </div>
-
-              {/*
-                Cuando haya comunicados, cada ítem se renderizaría así:
-                <div style={{ display: "flex", alignItems: "flex-start", gap: "10px", padding: "10px 0", borderBottom: "1px solid #F4F2EE" }}>
-                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#FF3D5E", marginTop: 5, flexShrink: 0 }} />
-                  <div>
-                    <div style={{ fontFamily: "var(--font-jakarta)", fontSize: "13px", color: "#111111", fontWeight: 400, lineHeight: 1.4 }}>
-                      Texto del comunicado
-                    </div>
-                    <div style={{ fontFamily: "var(--font-jakarta)", fontSize: "11px", color: "#aaaaaa", marginTop: "3px" }}>
-                      hace 2 horas
-                    </div>
-                  </div>
-                </div>
-              */}
-            </div>
-          </div>
-
-          {/* Clases */}
-          <div
-            style={{
-              background: "white",
-              borderRadius: "14px",
-              border: "1px solid #EEECE8",
-              overflow: "hidden",
-            }}
-          >
-            {/* Panel header */}
-            <div
-              style={{
-                padding: "18px 20px 14px",
-                borderBottom: "1px solid #F4F2EE",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-              }}
-            >
-              <h2
-                style={{
-                  fontFamily: "var(--font-fraunces)",
-                  fontWeight: 400,
-                  fontSize: "16px",
-                  letterSpacing: "-0.02em",
-                  color: "#111111",
-                }}
-              >
-                Próximas clases
-              </h2>
-              <a
-                href="/dashboard/clases"
-                style={{
-                  fontFamily: "var(--font-jakarta)",
-                  fontWeight: 500,
-                  fontSize: "12px",
-                  color: "#FF3D5E",
-                  textDecoration: "none",
-                }}
-              >
-                Ver todas
-              </a>
-            </div>
-
-            {/* Panel body */}
-            <div style={{ padding: "16px 20px" }}>
-              <div
-                style={{
-                  fontFamily: "var(--font-jakarta)",
-                  fontWeight: 400,
-                  fontSize: "13px",
-                  color: "#999999",
-                  textAlign: "center",
-                  padding: "28px 0",
-                }}
-              >
-                No hay clases programadas
-              </div>
-
-              {/*
-                Cuando haya clases, cada ítem se renderizaría así:
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 0", borderBottom: "1px solid #F4F2EE" }}>
-                  <div>
-                    <div style={{ fontFamily: "var(--font-jakarta)", fontSize: "13px", fontWeight: 500, color: "#111111" }}>
-                      Ballet Clásico
-                    </div>
-                    <div style={{ fontFamily: "var(--font-jakarta)", fontSize: "11px", color: "#aaaaaa", marginTop: "2px" }}>
-                      Lunes 18:00 — Sala A
-                    </div>
-                  </div>
-                  <span style={{ fontFamily: "var(--font-jakarta)", fontSize: "11px", fontWeight: 500, color: "#1D9E75", background: "#F0FAF5", padding: "3px 8px", borderRadius: "6px" }}>
-                    Ballet
-                  </span>
-                </div>
-              */}
-            </div>
-          </div>
+          {user.role === "student" ? (
+            <Panel
+              title="Mis pagos"
+              linkHref={pagosHref}
+              linkLabel="Ver todos"
+              empty="No hay pagos registrados"
+            />
+          ) : (
+            <Panel
+              title={user.role === "admin" ? "Próximas clases" : "Mis clases"}
+              linkHref={clasesHref}
+              linkLabel="Ver todas"
+              empty="No hay clases programadas"
+            />
+          )}
         </div>
       </div>
     </PageTransition>

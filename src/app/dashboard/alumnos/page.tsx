@@ -13,6 +13,8 @@ export default async function AlumnosPage() {
   });
   if (!user) redirect("/sign-in");
 
+  if (user.role !== "admin") redirect("/dashboard");
+
   if (!user.schoolId) {
     return (
       <PageTransition>

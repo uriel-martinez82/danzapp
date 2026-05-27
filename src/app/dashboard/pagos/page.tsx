@@ -35,6 +35,8 @@ export default async function PagosPage() {
   const user = await prisma.user.findUnique({ where: { id: clerkUser.id } });
   if (!user) redirect("/sign-in");
 
+  if (user.role !== "admin") redirect("/dashboard");
+
   if (!user.schoolId) {
     return (
       <PageTransition>

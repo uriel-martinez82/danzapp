@@ -4,9 +4,8 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import PageTransition from "@/components/PageTransition";
 import { AnimatedList, AnimatedItem } from "@/components/AnimatedList";
-import AnimatedButton from "@/components/AnimatedButton";
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
 const palette = [
   { bg: "#FFF0F2", color: "#C2185B" },
@@ -36,44 +35,101 @@ const dayNamesShort: Record<number, string> = {
 };
 
 const levelLabels: Record<string, string> = {
-  beginner: "Principiante",
+  beginner:     "Principiante",
   intermediate: "Intermedio",
-  advanced: "Avanzado",
-  all: "Todos los niveles",
+  advanced:     "Avanzado",
+  all:          "Todos los niveles",
+};
+
+// ── Tipos normalizados para el render ─────────────────────────────────────────
+
+type ClaseCard = {
+  id:            string;
+  name:          string;
+  style:         string | null;
+  level:         string | null;
+  room:          string | null;
+  capacity:      number | null;
+  enrollCount:   number;
+  teacher: {
+    firstName: string;
+    lastName:  string;
+  };
+  schedules: {
+    id:        string;
+    dayOfWeek: number;
+    startTime: string;
+    endTime:   string;
+  }[];
 };
 
 // ── Page ─────────────────────────────────────────────────────────────────────
 
-export default async function ClasesPage() {
+export default async function MisClasesPage() {
   const clerkUser = await currentUser();
   if (!clerkUser) redirect("/sign-in");
 
   const user = await prisma.user.findUnique({ where: { id: clerkUser.id } });
   if (!user) redirect("/sign-in");
 
-  if (user.role !== "admin") redirect("/dashboard");
+  // Solo teacher y student
+  if (user.role === "admin") redirect("/dashboard/clases");
 
-  if (!user.schoolId) {
-    return (
-      <PageTransition>
-        <div style={{ textAlign: "center", padding: "80px 20px" }}>
-          <p style={{ fontFamily: "var(--font-jakarta)", fontSize: "14px", color: "#999999" }}>
-            No tenés una escuela asignada.
-          </p>
-        </div>
-      </PageTransition>
-    );
+  let cards: ClaseCard[] = [];
+
+  if (user.role === "teacher") {
+    const classes = await prisma.class.findMany({
+      where:   { teacherId: user.id, active: true },
+      orderBy: { name: "asc" },
+      include: {
+        teacher:   { select: { firstName: true, lastName: true } },
+        schedules: { orderBy: { dayOfWeek: "asc" } },
+        _count:    { select: { enrollments: true } },
+      },
+    });
+
+    cards = classes.map((c) => ({
+      id:          c.id,
+      name:        c.name,
+      style:       c.style,
+      level:       c.level,
+      room:        c.room,
+      capacity:    c.capacity,
+      enrollCount: c._count.enrollments,
+      teacher:     c.teacher,
+      schedules:   c.schedules,
+    }));
+  } else {
+    // student
+    const enrollments = await prisma.enrollment.findMany({
+      where:   { studentId: user.id, status: "active" },
+      orderBy: { enrolledAt: "desc" },
+      include: {
+        class: {
+          include: {
+            teacher:   { select: { firstName: true, lastName: true } },
+            schedules: { orderBy: { dayOfWeek: "asc" } },
+            _count:    { select: { enrollments: true } },
+          },
+        },
+      },
+    });
+
+    cards = enrollments.map((e) => ({
+      id:          e.class.id,
+      name:        e.class.name,
+      style:       e.class.style,
+      level:       e.class.level,
+      room:        e.class.room,
+      capacity:    e.class.capacity,
+      enrollCount: e.class._count.enrollments,
+      teacher:     e.class.teacher,
+      schedules:   e.class.schedules,
+    }));
   }
 
-  const classes = await prisma.class.findMany({
-    where: { schoolId: user.schoolId },
-    orderBy: { name: "asc" },
-    include: {
-      teacher: { select: { firstName: true, lastName: true, email: true } },
-      schedules: { orderBy: { dayOfWeek: "asc" } },
-      _count: { select: { enrollments: true } },
-    },
-  });
+  const pageTitle  = user.role === "teacher" ? "Mis Clases" : "Mis Clases";
+  const pageSubtitle = `${cards.length} ${cards.length === 1 ? "clase" : "clases"}`;
 
   return (
     <PageTransition>
@@ -99,7 +155,7 @@ export default async function ClasesPage() {
                 lineHeight: 1.1,
               }}
             >
-              Clases
+              {pageTitle}
             </h1>
             <p
               style={{
@@ -109,34 +165,13 @@ export default async function ClasesPage() {
                 marginTop: "4px",
               }}
             >
-              {classes.length} {classes.length === 1 ? "clase" : "clases"}
+              {pageSubtitle}
             </p>
           </div>
-
-          <AnimatedButton
-            href="/dashboard/clases/nueva"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "6px",
-              background: "#FF3D5E",
-              color: "white",
-              borderRadius: "10px",
-              padding: "10px 20px",
-              fontFamily: "var(--font-jakarta)",
-              fontSize: "13px",
-              fontWeight: 500,
-              textDecoration: "none",
-              flexShrink: 0,
-            }}
-          >
-            <i className="ti ti-plus" aria-hidden="true" style={{ fontSize: "14px" }} />
-            Nueva clase
-          </AnimatedButton>
         </div>
 
         {/* ── Empty state ── */}
-        {classes.length === 0 && (
+        {cards.length === 0 && (
           <div
             style={{
               background: "white",
@@ -174,7 +209,9 @@ export default async function ClasesPage() {
                 marginBottom: "8px",
               }}
             >
-              Aún no hay clases
+              {user.role === "teacher"
+                ? "No tenés clases asignadas"
+                : "No estás inscripto en ninguna clase"}
             </h2>
             <p
               style={{
@@ -182,36 +219,17 @@ export default async function ClasesPage() {
                 fontSize: "13px",
                 color: "#999999",
                 lineHeight: 1.6,
-                maxWidth: 320,
-                margin: "0 auto 24px",
               }}
             >
-              Creá la primera clase para comenzar a organizar tu escuela.
+              {user.role === "teacher"
+                ? "El administrador te asignará clases próximamente."
+                : "Contactá al administrador para inscribirte en una clase."}
             </p>
-            <AnimatedButton
-              href="/dashboard/clases/nueva"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "6px",
-                background: "#FF3D5E",
-                color: "white",
-                borderRadius: "10px",
-                padding: "10px 20px",
-                fontFamily: "var(--font-jakarta)",
-                fontSize: "13px",
-                fontWeight: 500,
-                textDecoration: "none",
-              }}
-            >
-              <i className="ti ti-plus" aria-hidden="true" style={{ fontSize: "14px" }} />
-              Crear primera clase
-            </AnimatedButton>
           </div>
         )}
 
         {/* ── Grid ── */}
-        {classes.length > 0 && (
+        {cards.length > 0 && (
           <AnimatedList
             style={{
               display: "grid",
@@ -220,12 +238,9 @@ export default async function ClasesPage() {
               alignItems: "start",
             }}
           >
-            {classes.map((clase) => {
-              const styleChip = hashColor(clase.style ?? clase.name);
-              const initials = getInitials(
-                clase.teacher.firstName,
-                clase.teacher.lastName,
-              );
+            {cards.map((clase) => {
+              const styleChip  = hashColor(clase.style ?? clase.name);
+              const initials   = getInitials(clase.teacher.firstName, clase.teacher.lastName);
               const teacherName = `${clase.teacher.firstName} ${clase.teacher.lastName}`;
 
               return (
@@ -240,7 +255,7 @@ export default async function ClasesPage() {
                       flexDirection: "column",
                     }}
                   >
-                    {/* ── Card body ── */}
+                    {/* Card body */}
                     <div style={{ padding: "20px 22px", flex: 1 }}>
                       {/* Badges */}
                       <div
@@ -347,11 +362,7 @@ export default async function ClasesPage() {
                           {clase.schedules.map((sched) => (
                             <div
                               key={sched.id}
-                              style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "8px",
-                              }}
+                              style={{ display: "flex", alignItems: "center", gap: "8px" }}
                             >
                               <span
                                 style={{
@@ -395,7 +406,7 @@ export default async function ClasesPage() {
                       )}
                     </div>
 
-                    {/* ── Card footer ── */}
+                    {/* Card footer */}
                     <div
                       style={{
                         borderTop: "1px solid #F4F2EE",
@@ -405,13 +416,7 @@ export default async function ClasesPage() {
                         justifyContent: "space-between",
                       }}
                     >
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "14px",
-                        }}
-                      >
+                      <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
                         {/* Enrollment count */}
                         <span
                           style={{
@@ -423,12 +428,8 @@ export default async function ClasesPage() {
                             gap: "4px",
                           }}
                         >
-                          <i
-                            className="ti ti-users"
-                            aria-hidden="true"
-                            style={{ fontSize: "12px" }}
-                          />
-                          {clase._count.enrollments}
+                          <i className="ti ti-users" aria-hidden="true" style={{ fontSize: "12px" }} />
+                          {clase.enrollCount}
                           {clase.capacity ? ` / ${clase.capacity}` : ""}
                         </span>
 
@@ -444,37 +445,31 @@ export default async function ClasesPage() {
                               gap: "4px",
                             }}
                           >
-                            <i
-                              className="ti ti-door"
-                              aria-hidden="true"
-                              style={{ fontSize: "12px" }}
-                            />
+                            <i className="ti ti-door" aria-hidden="true" style={{ fontSize: "12px" }} />
                             {clase.room}
                           </span>
                         )}
                       </div>
 
-                      {/* Detail link */}
-                      <Link
-                        href={`/dashboard/clases/${clase.id}`}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          width: 30,
-                          height: 30,
-                          borderRadius: "8px",
-                          color: "#CCCCCC",
-                          textDecoration: "none",
-                          flexShrink: 0,
-                        }}
-                      >
-                        <i
-                          className="ti ti-chevron-right"
-                          aria-hidden="true"
-                          style={{ fontSize: "15px" }}
-                        />
-                      </Link>
+                      {/* Detail link — solo para admin; teacher/student ven info de solo lectura */}
+                      {user.role === "teacher" && (
+                        <Link
+                          href={`/dashboard/clases/${clase.id}`}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            width: 30,
+                            height: 30,
+                            borderRadius: "8px",
+                            color: "#CCCCCC",
+                            textDecoration: "none",
+                            flexShrink: 0,
+                          }}
+                        >
+                          <i className="ti ti-chevron-right" aria-hidden="true" style={{ fontSize: "15px" }} />
+                        </Link>
+                      )}
                     </div>
                   </div>
                 </AnimatedItem>

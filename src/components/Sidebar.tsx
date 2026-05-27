@@ -22,78 +22,58 @@ type Scheme = {
   icon:  string;
 };
 
+const schemes: Record<string, Scheme> = {
+  dashboard: {
+    off:   "rgba(245,158,11,0.10)",
+    hover: "rgba(245,158,11,0.22)",
+    on:    "#FFF3E0",
+    text:  "#7C4A00",
+    icon:  "#D97706",
+  },
+  alumnos: {
+    off:   "rgba(233,30,99,0.10)",
+    hover: "rgba(233,30,99,0.22)",
+    on:    "#FCE4EC",
+    text:  "#6D0030",
+    icon:  "#C2185B",
+  },
+  clases: {
+    off:   "rgba(76,175,80,0.10)",
+    hover: "rgba(76,175,80,0.22)",
+    on:    "#E8F5E9",
+    text:  "#1B4D1E",
+    icon:  "#388E3C",
+  },
+  comunicados: {
+    off:   "rgba(33,150,243,0.10)",
+    hover: "rgba(33,150,243,0.22)",
+    on:    "#E3F2FD",
+    text:  "#0A2E6E",
+    icon:  "#1565C0",
+  },
+  pagos: {
+    off:   "rgba(124,58,237,0.10)",
+    hover: "rgba(124,58,237,0.22)",
+    on:    "#EDE7F6",
+    text:  "#240A6E",
+    icon:  "#5E35B1",
+  },
+};
+
 const navItems: {
-  href:   string;
-  key:    string;
-  icon:   string;
-  label:  string;
-  scheme: Scheme;
+  href:     string;
+  icon:     string;
+  label:    string;
+  colorKey: string;
+  roles:    string[];
 }[] = [
-  {
-    href:  "/dashboard",
-    key:   "dashboard",
-    icon:  "ti-home",
-    label: "Dashboard",
-    scheme: {
-      off:   "rgba(245,158,11,0.10)",
-      hover: "rgba(245,158,11,0.22)",
-      on:    "#FFF3E0",
-      text:  "#7C4A00",
-      icon:  "#D97706",
-    },
-  },
-  {
-    href:  "/dashboard/alumnos",
-    key:   "alumnos",
-    icon:  "ti-users",
-    label: "Alumnos",
-    scheme: {
-      off:   "rgba(233,30,99,0.10)",
-      hover: "rgba(233,30,99,0.22)",
-      on:    "#FCE4EC",
-      text:  "#6D0030",
-      icon:  "#C2185B",
-    },
-  },
-  {
-    href:  "/dashboard/clases",
-    key:   "clases",
-    icon:  "ti-calendar",
-    label: "Clases",
-    scheme: {
-      off:   "rgba(76,175,80,0.10)",
-      hover: "rgba(76,175,80,0.22)",
-      on:    "#E8F5E9",
-      text:  "#1B4D1E",
-      icon:  "#388E3C",
-    },
-  },
-  {
-    href:  "/dashboard/comunicados",
-    key:   "comunicados",
-    icon:  "ti-bell",
-    label: "Comunicados",
-    scheme: {
-      off:   "rgba(33,150,243,0.10)",
-      hover: "rgba(33,150,243,0.22)",
-      on:    "#E3F2FD",
-      text:  "#0A2E6E",
-      icon:  "#1565C0",
-    },
-  },
-  {
-    href:  "/dashboard/pagos",
-    key:   "pagos",
-    icon:  "ti-credit-card",
-    label: "Pagos",
-    scheme: {
-      off:   "rgba(124,58,237,0.10)",
-      hover: "rgba(124,58,237,0.22)",
-      on:    "#EDE7F6",
-      text:  "#240A6E",
-      icon:  "#5E35B1",
-    },
-  },
+  { href: "/dashboard",            icon: "ti-home",        label: "Dashboard",   colorKey: "dashboard",   roles: ["admin", "teacher", "student"] },
+  { href: "/dashboard/alumnos",    icon: "ti-users",       label: "Alumnos",     colorKey: "alumnos",     roles: ["admin"] },
+  { href: "/dashboard/clases",     icon: "ti-calendar",    label: "Clases",      colorKey: "clases",      roles: ["admin"] },
+  { href: "/dashboard/mis-clases", icon: "ti-calendar",    label: "Mis Clases",  colorKey: "clases",      roles: ["teacher", "student"] },
+  { href: "/dashboard/comunicados",icon: "ti-bell",        label: "Comunicados", colorKey: "comunicados", roles: ["admin", "teacher", "student"] },
+  { href: "/dashboard/pagos",      icon: "ti-credit-card", label: "Pagos",       colorKey: "pagos",       roles: ["admin"] },
+  { href: "/dashboard/mis-pagos",  icon: "ti-credit-card", label: "Mis Pagos",   colorKey: "pagos",       roles: ["student"] },
 ];
 
 const roleLabels: Record<string, string> = {
@@ -102,24 +82,36 @@ const roleLabels: Record<string, string> = {
   student: "Alumno",
 };
 
-function getActiveKey(pathname: string): string {
+/** Sección activa — se usa para body[data-section] y las esquinas del tab */
+function getActiveSection(pathname: string): string {
   if (pathname.startsWith("/dashboard/alumnos"))     return "alumnos";
   if (pathname.startsWith("/dashboard/clases"))      return "clases";
+  if (pathname.startsWith("/dashboard/mis-clases"))  return "clases";
   if (pathname.startsWith("/dashboard/comunicados")) return "comunicados";
   if (pathname.startsWith("/dashboard/pagos"))       return "pagos";
+  if (pathname.startsWith("/dashboard/mis-pagos"))   return "pagos";
   return "dashboard";
 }
 
+/** Si un item está activo (basado en su href exacto) */
+function isItemActive(pathname: string, href: string): boolean {
+  if (href === "/dashboard") return pathname === "/dashboard";
+  return pathname === href || pathname.startsWith(href + "/");
+}
+
 export default function Sidebar({ user }: { user: User }) {
-  const pathname  = usePathname();
-  const activeKey = getActiveKey(pathname);
+  const pathname      = usePathname();
+  const activeSection = getActiveSection(pathname);
   const [hoveredKey, setHoveredKey] = useState<string | null>(null);
+
+  // Solo mostrar los items permitidos para el rol del usuario
+  const visibleItems = navItems.filter((item) => item.roles.includes(user.role));
 
   // Sync body[data-section] for the main background transition
   useEffect(() => {
-    document.body.setAttribute("data-section", activeKey);
+    document.body.setAttribute("data-section", activeSection);
     return () => { document.body.removeAttribute("data-section"); };
-  }, [activeKey]);
+  }, [activeSection]);
 
   const initial     = user.firstName?.[0] ?? user.email[0].toUpperCase();
   const displayName = user.firstName
@@ -228,10 +220,10 @@ export default function Sidebar({ user }: { user: User }) {
           overflow: "visible",
         }}
       >
-        {navItems.map((item) => {
-          const isActive  = activeKey === item.key;
-          const isHovered = !isActive && hoveredKey === item.key;
-          const { scheme } = item;
+        {visibleItems.map((item) => {
+          const isActive  = isItemActive(pathname, item.href);
+          const isHovered = !isActive && hoveredKey === item.href;
+          const scheme    = schemes[item.colorKey];
 
           const bg = isActive
             ? scheme.on
@@ -245,7 +237,7 @@ export default function Sidebar({ user }: { user: User }) {
               href={item.href}
               className={
                 isActive
-                  ? `tab-active tab-active-${item.key}`
+                  ? `tab-active tab-active-${item.colorKey}`
                   : ""
               }
               style={{
@@ -270,13 +262,13 @@ export default function Sidebar({ user }: { user: User }) {
                 position: "relative",
                 zIndex: isActive ? 2 : 1,
               }}
-              onMouseEnter={() => setHoveredKey(item.key)}
+              onMouseEnter={() => setHoveredKey(item.href)}
               onMouseLeave={() => setHoveredKey(null)}
             >
               {/* Icon — active gets pop-in spring, inactive gets hover spring */}
               {isActive ? (
                 <motion.span
-                  key={`icon-active-${item.key}`}
+                  key={`icon-active-${item.href}`}
                   initial={{ scale: 0.7, rotate: -15 }}
                   animate={{ scale: 1, rotate: 0 }}
                   transition={{ type: "spring", stiffness: 350, damping: 10 }}
@@ -290,7 +282,7 @@ export default function Sidebar({ user }: { user: User }) {
                 </motion.span>
               ) : (
                 <motion.span
-                  key={`icon-inactive-${item.key}`}
+                  key={`icon-inactive-${item.href}`}
                   whileHover={{ scale: 1.3, rotate: -8 }}
                   transition={{ type: "spring", stiffness: 400, damping: 15 }}
                   style={{ display: "inline-flex", lineHeight: 1, flexShrink: 0 }}
