@@ -330,7 +330,7 @@ export default async function MiClaseDetailPage({
               )}
             </div>
 
-            {/* ── Botón tomar asistencia ── */}
+            {/* ── Botones de acción ── */}
             {canAttend && (
               <>
                 <style>{`
@@ -345,30 +345,57 @@ export default async function MiClaseDetailPage({
                     transform: translateY(0);
                   }
                 `}</style>
-                <Link
-                  href={`/dashboard/mis-clases/${id}/asistencia`}
-                  className="attend-btn"
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "10px",
-                    background: "#111111",
-                    color: "white",
-                    borderRadius: "12px",
-                    padding: "14px 28px",
-                    fontFamily: "var(--font-jakarta)",
-                    fontSize: "14px",
-                    fontWeight: 600,
-                    textDecoration: "none",
-                  }}
-                >
-                  <i
-                    className="ti ti-clipboard-check"
-                    aria-hidden="true"
-                    style={{ fontSize: "16px", color: "#FF3D5E" }}
-                  />
-                  Tomar asistencia
-                </Link>
+                <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
+                  <Link
+                    href={`/dashboard/mis-clases/${id}/asistencia`}
+                    className="attend-btn"
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "10px",
+                      background: "#111111",
+                      color: "white",
+                      borderRadius: "12px",
+                      padding: "14px 28px",
+                      fontFamily: "var(--font-jakarta)",
+                      fontSize: "14px",
+                      fontWeight: 600,
+                      textDecoration: "none",
+                    }}
+                  >
+                    <i
+                      className="ti ti-clipboard-check"
+                      aria-hidden="true"
+                      style={{ fontSize: "16px", color: "#FF3D5E" }}
+                    />
+                    Tomar asistencia
+                  </Link>
+
+                  <Link
+                    href={`/dashboard/mis-clases/${id}/evaluaciones`}
+                    className="attend-btn"
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "10px",
+                      background: "#111111",
+                      color: "white",
+                      borderRadius: "12px",
+                      padding: "14px 28px",
+                      fontFamily: "var(--font-jakarta)",
+                      fontSize: "14px",
+                      fontWeight: 600,
+                      textDecoration: "none",
+                    }}
+                  >
+                    <i
+                      className="ti ti-star"
+                      aria-hidden="true"
+                      style={{ fontSize: "16px", color: "#FF3D5E" }}
+                    />
+                    Ver evaluaciones
+                  </Link>
+                </div>
               </>
             )}
           </div>
