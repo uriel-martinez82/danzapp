@@ -300,42 +300,43 @@ export default function EvaluacionesPage({
       {/* ── Modal de nueva evaluación ── */}
       <AnimatePresence>
         {modalOpen && (
-          <>
-            {/* Overlay */}
+          // Overlay = flex container que centra la card
+          <motion.div
+            key="modal-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={() => !saving && setModalOpen(false)}
+            style={{
+              position:       "fixed",
+              inset:          0,
+              display:        "flex",
+              alignItems:     "center",
+              justifyContent: "center",
+              zIndex:         50,
+              background:     "rgba(0,0,0,0.4)",
+              backdropFilter: "blur(4px)",
+            }}
+          >
+            {/* Card del modal — detiene el click para no cerrar al hacer clic dentro */}
             <motion.div
-              key="overlay"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => !saving && setModalOpen(false)}
-              style={{
-                position:   "fixed",
-                inset:      0,
-                background: "rgba(0,0,0,0.5)",
-                zIndex:     100,
-                backdropFilter: "blur(2px)",
-              }}
-            />
-
-            {/* Card del modal */}
-            <motion.div
-              key="modal"
-              initial={{ opacity: 0, scale: 0.94, y: 20 }}
+              key="modal-card"
+              initial={{ opacity: 0, scale: 0.94, y: 16 }}
               animate={{ opacity: 1, scale: 1,    y: 0  }}
-              exit={{ opacity: 0, scale: 0.94, y: 20 }}
+              exit={{ opacity: 0, scale: 0.94, y: 16 }}
               transition={{ type: "spring", stiffness: 340, damping: 26 }}
+              onClick={(e) => e.stopPropagation()}
               style={{
-                position:      "fixed",
-                top:           "50%",
-                left:          "50%",
-                transform:     "translate(-50%, -50%)",
-                zIndex:        101,
-                width:         "100%",
-                maxWidth:      500,
-                background:    "white",
-                borderRadius:  "18px",
-                boxShadow:     "0 20px 60px rgba(0,0,0,0.18)",
-                overflow:      "hidden",
+                position:     "relative",
+                background:   "white",
+                borderRadius: "16px",
+                width:        "100%",
+                maxWidth:     500,
+                maxHeight:    "90vh",
+                overflowY:    "auto",
+                margin:       "16px",
+                boxShadow:    "0 20px 60px rgba(0,0,0,0.18)",
               }}
             >
               {/* Modal header */}
@@ -601,7 +602,7 @@ export default function EvaluacionesPage({
                 </div>
               </div>
             </motion.div>
-          </>
+          </motion.div>
         )}
       </AnimatePresence>
 
