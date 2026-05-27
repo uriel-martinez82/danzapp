@@ -116,7 +116,7 @@ export default function Sidebar({ user }: { user: User }) {
     return () => { document.body.removeAttribute("data-section"); };
   }, [activeSection]);
 
-  // Badge de notificaciones no leídas
+  // Badge de notificaciones no leídas — re-fetch en cada navegación
   useEffect(() => {
     async function fetchUnread() {
       try {
@@ -130,8 +130,21 @@ export default function Sidebar({ user }: { user: User }) {
     }
 
     fetchUnread();
+  }, [pathname]); // re-fetch cada vez que el usuario navega
 
-    // Re-fetch cuando el usuario vuelve a la pestaña o la página de notifs dispara el evento
+  // Listeners adicionales: foco de ventana y evento custom de la página de notificaciones
+  useEffect(() => {
+    async function fetchUnread() {
+      try {
+        const res = await fetch("/api/notificaciones");
+        if (!res.ok) return;
+        const data = await res.json() as { readByMe: boolean }[];
+        if (Array.isArray(data)) {
+          setUnreadCount(data.filter((n) => !n.readByMe).length);
+        }
+      } catch { /* silencioso */ }
+    }
+
     window.addEventListener("focus", fetchUnread);
     window.addEventListener("notifications-updated", fetchUnread);
     return () => {
@@ -326,29 +339,23 @@ export default function Sidebar({ user }: { user: User }) {
 
               {/* Badge de no leídas */}
               {item.badge && unreadCount > 0 && (
-                <motion.span
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ type: "spring", stiffness: 500, damping: 20 }}
+                <span
                   style={{
-                    display:        "flex",
-                    alignItems:     "center",
-                    justifyContent: "center",
-                    minWidth:       18,
-                    height:         18,
-                    borderRadius:   "9px",
-                    background:     "#FF3D5E",
-                    color:          "white",
-                    fontFamily:     "var(--font-jakarta)",
-                    fontSize:       "10px",
-                    fontWeight:     700,
-                    paddingLeft:    unreadCount > 9 ? "5px" : "0",
-                    paddingRight:   unreadCount > 9 ? "5px" : "0",
-                    flexShrink:     0,
+                    background:    "#FF3D5E",
+                    color:         "white",
+                    borderRadius:  "9999px",
+                    fontSize:      "11px",
+                    fontFamily:    "var(--font-jakarta)",
+                    fontWeight:    700,
+                    padding:       "2px 6px",
+                    lineHeight:    1.2,
+                    flexShrink:    0,
+                    minWidth:      "18px",
+                    textAlign:     "center",
                   }}
                 >
                   {unreadCount > 99 ? "99+" : unreadCount}
-                </motion.span>
+                </span>
               )}
             </Link>
           );

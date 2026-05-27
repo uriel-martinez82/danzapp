@@ -388,12 +388,18 @@ export default function NotificacionesPage() {
                   transition:   "background 0.3s ease, border-color 0.3s ease",
                 }}
               >
-                {/* Dot no leída */}
-                <div style={{ paddingTop: "4px", flexShrink: 0, width: 8 }}>
-                  <motion.div
-                    animate={{ opacity: unread ? 1 : 0, scale: unread ? 1 : 0 }}
-                    transition={{ duration: 0.3 }}
-                    style={{ width: 8, height: 8, borderRadius: "50%", background: "#FF3D5E" }}
+                {/* Dot no leída — CSS puro para evitar conflicto con initial del padre */}
+                <div style={{ paddingTop: "5px", flexShrink: 0, width: 8 }}>
+                  <div
+                    style={{
+                      width:      8,
+                      height:     8,
+                      borderRadius: "50%",
+                      background: "#FF3D5E",
+                      opacity:    unread ? 1 : 0,
+                      transform:  `scale(${unread ? 1 : 0})`,
+                      transition: "opacity 0.3s ease, transform 0.3s ease",
+                    }}
                   />
                 </div>
 
