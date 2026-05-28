@@ -78,61 +78,93 @@ export default async function ClasesPage() {
   return (
     <PageTransition>
       <div>
-        {/* ── Header ── */}
+        {/* ── Hero banner ── */}
         <div
           style={{
-            display: "flex",
-            alignItems: "flex-end",
-            justifyContent: "space-between",
-            paddingBottom: "24px",
-            marginBottom: "4px",
+            position: "relative",
+            height: 180,
+            borderRadius: "16px",
+            overflow: "hidden",
+            marginBottom: "24px",
           }}
         >
-          <div>
-            <h1
-              style={{
-                fontFamily: "var(--font-fraunces)",
-                fontWeight: 300,
-                fontSize: "32px",
-                letterSpacing: "-0.03em",
-                color: "#111111",
-                lineHeight: 1.1,
-              }}
-            >
-              Clases
-            </h1>
-            <p
-              style={{
-                fontFamily: "var(--font-jakarta)",
-                fontSize: "13px",
-                color: "#999999",
-                marginTop: "4px",
-              }}
-            >
-              {classes.length} {classes.length === 1 ? "clase" : "clases"}
-            </p>
-          </div>
-
-          <AnimatedButton
-            href="/dashboard/clases/nueva"
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="https://images.unsplash.com/photo-1547153760-18fc86324498?w=1600&q=80"
+            alt=""
+            aria-hidden="true"
             style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "6px",
-              background: "#FF3D5E",
-              color: "white",
-              borderRadius: "10px",
-              padding: "10px 20px",
-              fontFamily: "var(--font-jakarta)",
-              fontSize: "13px",
-              fontWeight: 500,
-              textDecoration: "none",
-              flexShrink: 0,
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              objectPosition: "center 40%",
+            }}
+          />
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              background:
+                "linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.60) 100%)",
+            }}
+          />
+          <div
+            style={{
+              position: "absolute",
+              bottom: 0,
+              left: 0,
+              right: 0,
+              padding: "20px 24px",
+              display: "flex",
+              alignItems: "flex-end",
+              justifyContent: "space-between",
             }}
           >
-            <i className="ti ti-plus" aria-hidden="true" style={{ fontSize: "14px" }} />
-            Nueva clase
-          </AnimatedButton>
+            <div>
+              <h1
+                style={{
+                  fontFamily: "var(--font-fraunces)",
+                  fontWeight: 300,
+                  fontSize: "32px",
+                  letterSpacing: "-0.03em",
+                  color: "white",
+                  lineHeight: 1.1,
+                }}
+              >
+                Clases
+              </h1>
+              <p
+                style={{
+                  fontFamily: "var(--font-jakarta)",
+                  fontSize: "13px",
+                  color: "rgba(255,255,255,0.65)",
+                  marginTop: "4px",
+                }}
+              >
+                {classes.length} {classes.length === 1 ? "clase" : "clases"}
+              </p>
+            </div>
+            <AnimatedButton
+              href="/dashboard/clases/nueva"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                background: "#FF3D5E",
+                color: "white",
+                borderRadius: "10px",
+                padding: "10px 20px",
+                fontFamily: "var(--font-jakarta)",
+                fontSize: "13px",
+                fontWeight: 500,
+                textDecoration: "none",
+                flexShrink: 0,
+              }}
+            >
+              <i className="ti ti-plus" aria-hidden="true" style={{ fontSize: "14px" }} />
+              Nueva clase
+            </AnimatedButton>
+          </div>
         </div>
 
         {/* ── Empty state ── */}
@@ -231,10 +263,10 @@ export default async function ClasesPage() {
               return (
                 <AnimatedItem key={clase.id}>
                   <div
+                    className="pasada-card"
                     style={{
                       background: "white",
                       borderRadius: "14px",
-                      border: "1px solid #EEECE8",
                       overflow: "hidden",
                       display: "flex",
                       flexDirection: "column",

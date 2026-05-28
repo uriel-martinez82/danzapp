@@ -95,10 +95,10 @@ const audienceConfig: Record<string, { label: string; bg: string; color: string 
 function StatCard({ stat }: { stat: StatCard }) {
   return (
     <div
+      className="pasada-card"
       style={{
         background: "white",
         borderRadius: "14px",
-        border: "1px solid #EEECE8",
         padding: "20px",
         height: "100%",
       }}
@@ -356,34 +356,72 @@ export default async function DashboardPage() {
   return (
     <PageTransition>
       <div>
-        {/* ── Header ── */}
-        <div style={{ padding: "4px 4px 0", marginBottom: "28px" }}>
-          <p
+        {/* ── Hero banner ── */}
+        <div
+          style={{
+            position: "relative",
+            height: 200,
+            borderRadius: "16px",
+            overflow: "hidden",
+            marginBottom: "24px",
+          }}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="https://images.unsplash.com/photo-1518834107812-67b0b7c58434?w=1600&q=80"
+            alt=""
+            aria-hidden="true"
             style={{
-              fontFamily: "var(--font-jakarta)",
-              fontWeight: 400,
-              fontSize: "11px",
-              letterSpacing: "0.12em",
-              textTransform: "uppercase",
-              color: "#999999",
-              marginBottom: "12px",
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              objectPosition: "center 30%",
+            }}
+          />
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              background:
+                "linear-gradient(to bottom, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0.64) 100%)",
+            }}
+          />
+          <div
+            style={{
+              position: "absolute",
+              bottom: 0,
+              left: 0,
+              right: 0,
+              padding: "24px 28px",
             }}
           >
-            {fechaLarga}
-          </p>
-          <h1
-            style={{
-              fontFamily: "var(--font-fraunces)",
-              fontWeight: 300,
-              fontSize: "38px",
-              lineHeight: 1.15,
-              letterSpacing: "-0.03em",
-              color: "#111111",
-            }}
-          >
-            {saludo},{" "}
-            <em style={{ color: "#FF3D5E", fontStyle: "italic" }}>{firstName}</em>
-          </h1>
+            <p
+              style={{
+                fontFamily: "var(--font-jakarta)",
+                fontWeight: 400,
+                fontSize: "11px",
+                letterSpacing: "0.12em",
+                textTransform: "uppercase",
+                color: "rgba(255,255,255,0.58)",
+                marginBottom: "8px",
+              }}
+            >
+              {fechaLarga}
+            </p>
+            <h1
+              style={{
+                fontFamily: "var(--font-fraunces)",
+                fontWeight: 300,
+                fontSize: "36px",
+                lineHeight: 1.15,
+                letterSpacing: "-0.03em",
+                color: "white",
+              }}
+            >
+              {saludo},{" "}
+              <em style={{ color: "#FF8FA3", fontStyle: "italic" }}>{firstName}</em>
+            </h1>
+          </div>
         </div>
 
         {/* ── Stat cards ── */}

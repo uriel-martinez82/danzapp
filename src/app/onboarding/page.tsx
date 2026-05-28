@@ -78,7 +78,7 @@ export default function OnboardingPage() {
     <div
       style={{
         minHeight: "100vh",
-        background: "#FAFAF8",
+        position: "relative",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
@@ -86,11 +86,39 @@ export default function OnboardingPage() {
         padding: "24px",
       }}
     >
+      {/* ── Background photo ── */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="https://images.unsplash.com/photo-1571902943202-507ec2618e8f?w=1600&q=80"
+        alt=""
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          inset: 0,
+          width: "100%",
+          height: "100%",
+          objectFit: "cover",
+          objectPosition: "center",
+          zIndex: 0,
+        }}
+      />
+      {/* ── Dark overlay ── */}
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          background: "rgba(8, 8, 10, 0.58)",
+          zIndex: 1,
+        }}
+      />
+
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
         style={{
+          position: "relative",
+          zIndex: 2,
           width: "100%",
           maxWidth: "480px",
           display: "flex",
@@ -107,7 +135,7 @@ export default function OnboardingPage() {
               fontStyle: "italic",
               fontSize: "28px",
               letterSpacing: "-0.03em",
-              color: "#111111",
+              color: "white",
               lineHeight: 1,
               marginBottom: "6px",
             }}
@@ -121,7 +149,7 @@ export default function OnboardingPage() {
               fontWeight: 400,
               letterSpacing: "0.14em",
               textTransform: "uppercase",
-              color: "#AAAAAA",
+              color: "rgba(255,255,255,0.45)",
             }}
           >
             gestión de danza
@@ -270,7 +298,7 @@ export default function OnboardingPage() {
           style={{
             fontFamily: "var(--font-jakarta)",
             fontSize: "12px",
-            color: "#BBBBBB",
+            color: "rgba(255,255,255,0.35)",
             marginTop: "20px",
             textAlign: "center",
           }}
