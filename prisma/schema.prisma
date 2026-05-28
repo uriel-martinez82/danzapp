@@ -8,13 +8,16 @@ datasource db {
 }
 
 model School {
-  id         String   @id @default(uuid())
-  name       String
-  slug       String   @unique
-  logoUrl    String?
-  timezone   String   @default("America/Argentina/Buenos_Aires")
-  plan       String   @default("free")
-  createdAt  DateTime @default(now())
+  id          String   @id @default(uuid())
+  name        String
+  slug        String   @unique
+  logoUrl     String?
+  bannerUrl   String?
+  accentColor String?  @default("#FF3D5E")
+  timezone    String   @default("America/Argentina/Buenos_Aires")
+  plan        String   @default("free")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   users         User[]
   classes       Class[]

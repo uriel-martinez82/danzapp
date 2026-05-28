@@ -441,28 +441,60 @@ export default function Sidebar({ user }: { user: User }) {
           />
         </Link>
 
-        {/* Link "Usuarios" — solo para admins */}
+        {/* Links de admin — Configuración + Usuarios */}
         {user.role === "admin" && (
-          <Link
-            href="/dashboard/usuarios"
-            style={{
-              display:        "flex",
-              alignItems:     "center",
-              gap:            "6px",
-              fontFamily:     "var(--font-jakarta)",
-              fontWeight:     400,
-              fontSize:       "12px",
-              color:          "rgba(255,255,255,0.35)",
-              textDecoration: "none",
-              marginBottom:   "10px",
-              transition:     "color 0.15s",
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.65)")}
-            onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.35)")}
-          >
-            <i className="ti ti-users" aria-hidden="true" style={{ fontSize: "13px" }} />
-            Usuarios
-          </Link>
+          <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginBottom: "10px" }}>
+            <Link
+              href="/dashboard/configuracion"
+              style={{
+                display:        "flex",
+                alignItems:     "center",
+                gap:            "6px",
+                fontFamily:     "var(--font-jakarta)",
+                fontWeight:     400,
+                fontSize:       "12px",
+                color:          pathname.startsWith("/dashboard/configuracion")
+                  ? "rgba(255,255,255,0.75)"
+                  : "rgba(255,255,255,0.35)",
+                textDecoration: "none",
+                transition:     "color 0.15s",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.65)")}
+              onMouseLeave={(e) => (
+                e.currentTarget.style.color = pathname.startsWith("/dashboard/configuracion")
+                  ? "rgba(255,255,255,0.75)"
+                  : "rgba(255,255,255,0.35)"
+              )}
+            >
+              <i className="ti ti-settings" aria-hidden="true" style={{ fontSize: "13px" }} />
+              Configuración
+            </Link>
+            <Link
+              href="/dashboard/usuarios"
+              style={{
+                display:        "flex",
+                alignItems:     "center",
+                gap:            "6px",
+                fontFamily:     "var(--font-jakarta)",
+                fontWeight:     400,
+                fontSize:       "12px",
+                color:          pathname.startsWith("/dashboard/usuarios")
+                  ? "rgba(255,255,255,0.75)"
+                  : "rgba(255,255,255,0.35)",
+                textDecoration: "none",
+                transition:     "color 0.15s",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.65)")}
+              onMouseLeave={(e) => (
+                e.currentTarget.style.color = pathname.startsWith("/dashboard/usuarios")
+                  ? "rgba(255,255,255,0.75)"
+                  : "rgba(255,255,255,0.35)"
+              )}
+            >
+              <i className="ti ti-users" aria-hidden="true" style={{ fontSize: "13px" }} />
+              Usuarios
+            </Link>
+          </div>
         )}
 
         <SignOutButton redirectUrl="/sign-in">

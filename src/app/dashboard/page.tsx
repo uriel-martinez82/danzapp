@@ -224,6 +224,17 @@ export default async function DashboardPage() {
 
   const role = String(user.role);
 
+  // ── Branding de la escuela ────────────────────────────────────────────────────
+  const school = user.schoolId
+    ? await prisma.school.findUnique({
+        where:  { id: user.schoolId },
+        select: { bannerUrl: true, logoUrl: true, accentColor: true, name: true },
+      })
+    : null;
+
+  const bannerSrc   = school?.bannerUrl   || "https://images.unsplash.com/photo-1518834107812-67b0b7c58434?w=1600&q=80";
+  const accentColor = school?.accentColor ?? "#FF3D5E";
+
   const hora    = new Date().getHours();
   const saludo  = hora < 12 ? "Buenos días" : hora < 19 ? "Buenas tardes" : "Buenas noches";
   const firstName = user.firstName || user.email.split("@")[0];
@@ -368,7 +379,7 @@ export default async function DashboardPage() {
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="https://images.unsplash.com/photo-1518834107812-67b0b7c58434?w=1600&q=80"
+            src={bannerSrc}
             alt=""
             aria-hidden="true"
             style={{
@@ -393,34 +404,57 @@ export default async function DashboardPage() {
               left: 0,
               right: 0,
               padding: "24px 28px",
+              display: "flex",
+              alignItems: "flex-end",
+              gap: "14px",
             }}
           >
-            <p
-              style={{
-                fontFamily: "var(--font-jakarta)",
-                fontWeight: 400,
-                fontSize: "11px",
-                letterSpacing: "0.12em",
-                textTransform: "uppercase",
-                color: "rgba(255,255,255,0.58)",
-                marginBottom: "8px",
-              }}
-            >
-              {fechaLarga}
-            </p>
-            <h1
-              style={{
-                fontFamily: "var(--font-fraunces)",
-                fontWeight: 300,
-                fontSize: "36px",
-                lineHeight: 1.15,
-                letterSpacing: "-0.03em",
-                color: "white",
-              }}
-            >
-              {saludo},{" "}
-              <em style={{ color: "#FF8FA3", fontStyle: "italic" }}>{firstName}</em>
-            </h1>
+            {/* Logo de la escuela si existe */}
+            {school?.logoUrl && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={school.logoUrl}
+                alt={school.name ?? "Logo"}
+                style={{
+                  width:        52,
+                  height:       52,
+                  borderRadius: "50%",
+                  objectFit:    "cover",
+                  border:       "2px solid rgba(255,255,255,0.35)",
+                  flexShrink:   0,
+                  marginBottom: "4px",
+                }}
+              />
+            )}
+
+            <div>
+              <p
+                style={{
+                  fontFamily: "var(--font-jakarta)",
+                  fontWeight: 400,
+                  fontSize: "11px",
+                  letterSpacing: "0.12em",
+                  textTransform: "uppercase",
+                  color: "rgba(255,255,255,0.58)",
+                  marginBottom: "8px",
+                }}
+              >
+                {fechaLarga}
+              </p>
+              <h1
+                style={{
+                  fontFamily: "var(--font-fraunces)",
+                  fontWeight: 300,
+                  fontSize: "36px",
+                  lineHeight: 1.15,
+                  letterSpacing: "-0.03em",
+                  color: "white",
+                }}
+              >
+                {saludo},{" "}
+                <em style={{ color: accentColor, fontStyle: "italic", filter: "brightness(1.3)" }}>{firstName}</em>
+              </h1>
+            </div>
           </div>
         </div>
 
