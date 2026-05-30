@@ -66,16 +66,17 @@ const navItems: {
   label:    string;
   colorKey: string;
   roles:    string[];
-  badge:    boolean;
+  badgeKey: "notifications" | "retos" | null;
 }[] = [
-  { href: "/dashboard",                  icon: "ti-home",        label: "Dashboard",       colorKey: "dashboard",   roles: ["admin", "teacher", "student"], badge: false },
-  { href: "/dashboard/alumnos",          icon: "ti-users",       label: "Alumnos",         colorKey: "alumnos",     roles: ["admin"],                        badge: false },
-  { href: "/dashboard/clases",           icon: "ti-calendar",    label: "Clases",          colorKey: "clases",      roles: ["admin"],                        badge: false },
-  { href: "/dashboard/mis-clases",       icon: "ti-calendar",    label: "Mis Clases",      colorKey: "clases",      roles: ["teacher", "student"],           badge: false },
-  { href: "/dashboard/notificaciones",   icon: "ti-bell",        label: "Notificaciones",  colorKey: "comunicados", roles: ["admin", "teacher", "student"],  badge: true  },
-  { href: "/dashboard/comunicados",      icon: "ti-speakerphone",label: "Comunicados",     colorKey: "comunicados", roles: ["admin", "teacher", "student"],  badge: false },
-  { href: "/dashboard/pagos",            icon: "ti-credit-card", label: "Pagos",           colorKey: "pagos",       roles: ["admin"],                        badge: false },
-  { href: "/dashboard/mis-pagos",        icon: "ti-credit-card", label: "Mis Pagos",       colorKey: "pagos",       roles: ["student"],                      badge: false },
+  { href: "/dashboard",                  icon: "ti-home",        label: "Dashboard",       colorKey: "dashboard",   roles: ["admin", "teacher", "student"], badgeKey: null             },
+  { href: "/dashboard/alumnos",          icon: "ti-users",       label: "Alumnos",         colorKey: "alumnos",     roles: ["admin"],                        badgeKey: null             },
+  { href: "/dashboard/clases",           icon: "ti-calendar",    label: "Clases",          colorKey: "clases",      roles: ["admin"],                        badgeKey: null             },
+  { href: "/dashboard/mis-clases",       icon: "ti-calendar",    label: "Mis Clases",      colorKey: "clases",      roles: ["teacher", "student"],           badgeKey: null             },
+  { href: "/dashboard/retos",            icon: "ti-trophy",      label: "Retos",           colorKey: "alumnos",     roles: ["admin", "teacher", "student"],  badgeKey: "retos"          },
+  { href: "/dashboard/notificaciones",   icon: "ti-bell",        label: "Notificaciones",  colorKey: "comunicados", roles: ["admin", "teacher", "student"],  badgeKey: "notifications"  },
+  { href: "/dashboard/comunicados",      icon: "ti-speakerphone",label: "Comunicados",     colorKey: "comunicados", roles: ["admin", "teacher", "student"],  badgeKey: null             },
+  { href: "/dashboard/pagos",            icon: "ti-credit-card", label: "Pagos",           colorKey: "pagos",       roles: ["admin"],                        badgeKey: null             },
+  { href: "/dashboard/mis-pagos",        icon: "ti-credit-card", label: "Mis Pagos",       colorKey: "pagos",       roles: ["student"],                      badgeKey: null             },
 ];
 
 const roleLabels: Record<string, string> = {
@@ -104,8 +105,9 @@ function isItemActive(pathname: string, href: string): boolean {
 export default function Sidebar({ user }: { user: User }) {
   const pathname      = usePathname();
   const activeSection = getActiveSection(pathname);
-  const [hoveredKey, setHoveredKey]     = useState<string | null>(null);
-  const [unreadCount, setUnreadCount]   = useState(0);
+  const [hoveredKey,       setHoveredKey]       = useState<string | null>(null);
+  const [unreadCount,      setUnreadCount]      = useState(0);
+  const [pendingRetosCount, setPendingRetosCount] = useState(0);
 
   // Solo mostrar los items permitidos para el rol del usuario
   const visibleItems = navItems.filter((item) => item.roles.includes(user.role));
@@ -152,6 +154,22 @@ export default function Sidebar({ user }: { user: User }) {
       window.removeEventListener("notifications-updated", fetchUnread);
     };
   }, []);
+
+  // Badge de retos pendientes (solo alumnos) — re-fetch en cada navegación
+  useEffect(() => {
+    if (user.role !== "student") return;
+    async function fetchPendingRetos() {
+      try {
+        const res = await fetch("/api/retos");
+        if (!res.ok) return;
+        const data = await res.json() as { myEntry: { status: string } | null }[];
+        if (Array.isArray(data)) {
+          setPendingRetosCount(data.filter((c) => !c.myEntry || c.myEntry.status === "pending").length);
+        }
+      } catch { /* silencioso */ }
+    }
+    fetchPendingRetos();
+  }, [pathname, user.role]);
 
   const initial     = user.firstName?.[0] ?? user.email[0].toUpperCase();
   const displayName = user.firstName
@@ -338,26 +356,33 @@ export default function Sidebar({ user }: { user: User }) {
 
               <span style={{ flex: 1 }}>{item.label}</span>
 
-              {/* Badge de no leídas */}
-              {item.badge && unreadCount > 0 && (
-                <span
-                  style={{
-                    background:    "#FF3D5E",
-                    color:         "white",
-                    borderRadius:  "9999px",
-                    fontSize:      "11px",
-                    fontFamily:    "var(--font-jakarta)",
-                    fontWeight:    700,
-                    padding:       "2px 6px",
-                    lineHeight:    1.2,
-                    flexShrink:    0,
-                    minWidth:      "18px",
-                    textAlign:     "center",
-                  }}
-                >
-                  {unreadCount > 99 ? "99+" : unreadCount}
-                </span>
-              )}
+              {/* Badges */}
+              {(() => {
+                const count =
+                  item.badgeKey === "notifications" ? unreadCount :
+                  item.badgeKey === "retos"         ? pendingRetosCount :
+                  0;
+                if (!item.badgeKey || count === 0) return null;
+                return (
+                  <span
+                    style={{
+                      background:   "#FF3D5E",
+                      color:        "white",
+                      borderRadius: "9999px",
+                      fontSize:     "11px",
+                      fontFamily:   "var(--font-jakarta)",
+                      fontWeight:   700,
+                      padding:      "2px 6px",
+                      lineHeight:   1.2,
+                      flexShrink:   0,
+                      minWidth:     "18px",
+                      textAlign:    "center",
+                    }}
+                  >
+                    {count > 99 ? "99+" : count}
+                  </span>
+                );
+              })()}
             </Link>
           );
         })}

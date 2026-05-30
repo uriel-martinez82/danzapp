@@ -357,6 +357,26 @@ export default async function DashboardPage() {
     }));
   }
 
+  // ── Retos widget ─────────────────────────────────────────────────────────────
+
+  let retosWidget: { label: string; value: number | string; href: string; btnLabel: string } | null = null;
+
+  if (user.schoolId) {
+    if (role === "student") {
+      const validatedEntries = await prisma.challengeEntry.findMany({
+        where:   { userId: user.id, status: "validated" },
+        include: { challenge: { select: { points: true } } },
+      });
+      const totalPoints = validatedEntries.reduce((s, e) => s + e.challenge.points, 0);
+      retosWidget = { label: "Tus puntos", value: totalPoints, href: "/dashboard/retos", btnLabel: "Ver retos" };
+    } else {
+      const retosCount = await prisma.challenge.count({
+        where: { author: { schoolId: user.schoolId } },
+      });
+      retosWidget = { label: "Retos creados", value: retosCount, href: "/dashboard/retos", btnLabel: "Gestionar" };
+    }
+  }
+
   // ── Links según rol ───────────────────────────────────────────────────────────
 
   const clasesHref = role === "admin" ? "/dashboard/clases" : "/dashboard/mis-clases";
@@ -699,6 +719,95 @@ export default async function DashboardPage() {
             </div>
           </div>
         </div>
+
+        {/* ── Widget Retos ── */}
+        {retosWidget && (
+          <div
+            style={{
+              marginTop:    "12px",
+              background:   "white",
+              borderRadius: "14px",
+              border:       "1px solid #EEECE8",
+              overflow:     "hidden",
+            }}
+          >
+            <div
+              style={{
+                padding:        "18px 20px",
+                display:        "flex",
+                alignItems:     "center",
+                justifyContent: "space-between",
+                gap:            "16px",
+              }}
+            >
+              {/* Icon + info */}
+              <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+                <div
+                  style={{
+                    width:          44,
+                    height:         44,
+                    borderRadius:   "12px",
+                    background:     "#FFF0F2",
+                    display:        "flex",
+                    alignItems:     "center",
+                    justifyContent: "center",
+                    flexShrink:     0,
+                  }}
+                >
+                  <i className="ti ti-trophy" aria-hidden="true" style={{ fontSize: "20px", color: "#FF3D5E" }} />
+                </div>
+                <div>
+                  <div
+                    style={{
+                      fontFamily:    "var(--font-fraunces)",
+                      fontWeight:    400,
+                      fontSize:      "26px",
+                      letterSpacing: "-0.02em",
+                      color:         "#FF3D5E",
+                      lineHeight:    1,
+                    }}
+                  >
+                    {retosWidget.value}
+                  </div>
+                  <div
+                    style={{
+                      fontFamily:    "var(--font-jakarta)",
+                      fontSize:      "11px",
+                      letterSpacing: "0.08em",
+                      textTransform: "uppercase",
+                      color:         "#999999",
+                      marginTop:     "3px",
+                    }}
+                  >
+                    {retosWidget.label}
+                  </div>
+                </div>
+              </div>
+
+              {/* CTA */}
+              <Link
+                href={retosWidget.href}
+                style={{
+                  display:      "inline-flex",
+                  alignItems:   "center",
+                  gap:          "6px",
+                  background:   "#FF3D5E",
+                  color:        "white",
+                  borderRadius: "10px",
+                  padding:      "9px 18px",
+                  fontFamily:   "var(--font-jakarta)",
+                  fontSize:     "13px",
+                  fontWeight:   500,
+                  textDecoration: "none",
+                  flexShrink:   0,
+                }}
+              >
+                <i className="ti ti-trophy" aria-hidden="true" style={{ fontSize: "13px" }} />
+                {retosWidget.btnLabel}
+              </Link>
+            </div>
+          </div>
+        )}
       </div>
     </PageTransition>
   );
