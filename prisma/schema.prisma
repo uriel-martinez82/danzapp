@@ -187,33 +187,39 @@ model NotificationRead {
 }
 
 model Challenge {
-  id          String    @id @default(cuid())
-  title       String
-  description String
-  points      Int       @default(10)
-  dueDate     DateTime?
-  createdBy   String
-  author      User      @relation("ChallengeAuthor", fields: [createdBy], references: [id])
-  classId     String?
-  class       Class?    @relation(fields: [classId], references: [id])
-  targetType  String    @default("all")
-  targetId    String?
-  entries     ChallengeEntry[]
-  createdAt   DateTime  @default(now())
+  id           String    @id @default(cuid())
+  title        String
+  description  String
+  points       Int       @default(10)
+  dueDate      DateTime?
+  createdBy    String
+  author       User      @relation("ChallengeAuthor", fields: [createdBy], references: [id])
+  classId      String?
+  class        Class?    @relation(fields: [classId], references: [id])
+  targetType   String    @default("all")
+  targetId     String?
+  entries      ChallengeEntry[]
+  createdAt    DateTime  @default(now())
+  type         String    @default("simple")
+  questions    Json?
+  practiceGoal Int?
 }
 
 model ChallengeEntry {
-  id          String    @id @default(cuid())
-  challengeId String
-  challenge   Challenge @relation(fields: [challengeId], references: [id])
-  userId      String
-  user        User      @relation(fields: [userId], references: [id])
-  status      String    @default("pending")
-  completedAt DateTime?
-  validatedAt DateTime?
-  validatedBy String?
-  note        String?
-  createdAt   DateTime  @default(now())
+  id            String    @id @default(cuid())
+  challengeId   String
+  challenge     Challenge @relation(fields: [challengeId], references: [id])
+  userId        String
+  user          User      @relation(fields: [userId], references: [id])
+  status        String    @default("pending")
+  completedAt   DateTime?
+  validatedAt   DateTime?
+  validatedBy   String?
+  note          String?
+  createdAt     DateTime  @default(now())
+  mediaUrl      String?
+  answers       Json?
+  practiceCount Int?      @default(0)
 
   @@unique([challengeId, userId])
 }
